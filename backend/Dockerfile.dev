@@ -1,0 +1,20 @@
+# Dev-only image: runs `dotnet watch` against source bind-mounted by docker-compose.dev.yml, so
+# edits on the host hot-reload inside the container. Not used for production (see H1 in PLAN.md for
+# the eventual publish/deploy image — a separate, multi-stage Dockerfile).
+FROM mcr.microsoft.com/dotnet/sdk:10.0
+
+WORKDIR /src
+
+# Polling is required for file-change detection to work through a Docker Desktop bind mount from a
+# Windows host — native filesystem-event watchers (inotify) don't see changes made outside the
+# container's own filesystem view.
+ENV DOTNET_USE_POLLING_FILE_WATCHER=true \
+    DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    NUGET_XMLDOC_MODE=skip \
+    TZ=Asia/Ho_Chi_Minh
+
+EXPOSE 5200
+
+# Source is bind-mounted at /src by docker-compose; nothing is COPYed at build time so the image
+# never goes stale relative to the host's working tree.
+CMD ["dotnet", "watch", "run", "--project", "src/LabMonitoring.Api", "--no-launch-profile", "--non-interactive"]

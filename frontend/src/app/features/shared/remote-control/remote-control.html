@@ -1,0 +1,35 @@
+<div class="modal d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.5)">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          Điều khiển từ xa
+          @if (phase() === 'connecting') {
+            <span class="badge text-bg-secondary ms-2">Đang kết nối…</span>
+          }
+          @if (phase() === 'live') {
+            <span class="badge text-bg-success ms-2">Trực tiếp</span>
+          }
+          @if (phase() === 'ended') {
+            <span class="badge text-bg-secondary ms-2">Đã kết thúc</span>
+          }
+        </h5>
+      </div>
+      <div class="modal-body">
+        @if (error(); as e) {
+          <div class="alert alert-danger py-2 small">{{ e }}</div>
+        }
+        <div class="ratio ratio-16x9 bg-dark">
+          <video #remoteVideo autoplay playsinline muted style="object-fit: contain; cursor: default"></video>
+        </div>
+        <p class="text-muted small mt-2 mb-0">
+          Di chuột, nhấp chuột và gõ phím trực tiếp trên khung hình phía trên để điều khiển máy. Máy đích sẽ hiện dải
+          thông báo "Đang được hỗ trợ từ xa" trong suốt phiên làm việc.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" type="button" (click)="close()">Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>

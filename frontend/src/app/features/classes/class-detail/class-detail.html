@@ -1,0 +1,44 @@
+@if (error(); as e) {
+  <div class="alert alert-danger">{{ e }}</div>
+}
+
+@if (cls(); as c) {
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><a routerLink="/classes">Lớp học</a></li>
+      <li class="breadcrumb-item active">{{ c.code }}</li>
+    </ol>
+  </nav>
+
+  <p class="text-muted">
+    {{ c.subject }} · GV: {{ c.teacherName }}
+    @if (c.semester) { · {{ c.semester }} }
+  </p>
+
+  <div class="card">
+    <div class="card-header">Sinh viên trong lớp ({{ c.students.length }})</div>
+    <ul class="list-group list-group-flush">
+      @for (s of c.students; track s.id) {
+        <li class="list-group-item d-flex align-items-center">
+          <span>{{ s.studentCode }} — {{ s.fullName }}</span>
+          <button class="btn btn-sm btn-outline-danger ms-auto" type="button" (click)="unenroll(s.id)">Bỏ ghi danh</button>
+        </li>
+      } @empty {
+        <li class="list-group-item text-muted">Chưa có sinh viên trong lớp.</li>
+      }
+    </ul>
+    <div class="card-body">
+      <form class="row g-2" (ngSubmit)="enroll()">
+        <div class="col">
+          <select class="form-select form-select-sm" [(ngModel)]="selectedStudentId" name="pick">
+            <option [ngValue]="0" disabled>— chọn sinh viên để ghi danh —</option>
+            @for (s of candidates(); track s.id) { <option [ngValue]="s.id">{{ s.studentCode }} — {{ s.fullName }}</option> }
+          </select>
+        </div>
+        <div class="col-auto"><button class="btn btn-sm btn-primary" type="submit" [disabled]="!selectedStudentId">Ghi danh</button></div>
+      </form>
+    </div>
+  </div>
+} @else if (!error()) {
+  <div class="text-muted">Đang tải…</div>
+}

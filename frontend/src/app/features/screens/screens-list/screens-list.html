@@ -1,0 +1,168 @@
+@if (error(); as e) {
+  <div class="alert alert-danger" (click)="error.set(null)">{{ e }}</div>
+}
+
+<div class="card mb-3">
+  <div class="card-header d-flex justify-content-end">
+    <button class="btn btn-sm btn-primary" type="button" (click)="openCreateModal()">
+      <i class="bi bi-plus-lg"></i> Đăng ký màn hình mới
+    </button>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0 align-middle">
+      <thead><tr><th>Mã</th><th>Tên</th><th>Route</th><th>Nhóm cha</th><th>Icon</th><th>Thứ tự</th><th>Trạng thái</th><th></th></tr></thead>
+      <tbody>
+        @for (row of pagedScreens(); track row.screen.id) {
+          <tr>
+            <td><code>{{ row.screen.code }}</code></td>
+            <td [style.paddingLeft.rem]="row.depth ? 1.5 : 0">
+              <i class="bi" [class]="row.screen.icon ?? 'bi-dot'"></i> {{ row.screen.name }}
+            </td>
+            <td>{{ row.screen.route ?? '—' }}</td>
+            <td class="text-muted small">{{ row.parentName ?? '—' }}</td>
+            <td>{{ row.screen.icon ?? '—' }}</td>
+            <td>{{ row.screen.displayOrder }}</td>
+            <td>
+              @if (row.screen.isActive) {
+                <span class="badge text-bg-success">Hoạt động</span>
+              } @else {
+                <span class="badge text-bg-secondary">Ẩn</span>
+              }
+            </td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-secondary" type="button" (click)="startEdit(row.screen)">Sửa</button>
+              <button class="btn btn-sm btn-outline-danger" type="button" (click)="requestDelete(row.screen.id)">Xóa</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="8" class="text-muted">Chưa có màn hình nào.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer">
+    <app-pagination
+      [page]="page()"
+      [pageSize]="pageSize()"
+      [totalCount]="orderedScreens().length"
+      (pageChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
+    />
+  </div>
+</div>
+
+@if (editingId()) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Sửa màn hình chức năng</h5>
+        </div>
+        <div class="modal-body">
+          <div class="mb-2">
+            <label class="form-label small">Tên hiển thị</label>
+            <input class="form-control form-control-sm" [(ngModel)]="editDraft.name" name="editName" />
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Route</label>
+            <input class="form-control form-control-sm" placeholder="(nhóm — không có route)" [(ngModel)]="editDraft.route" name="editRoute" />
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Nhóm cha</label>
+            <select class="form-select form-select-sm" [(ngModel)]="editDraft.parentId" name="editParent">
+              <option [ngValue]="null">— không có —</option>
+              @for (p of possibleParents(); track p.id) {
+                @if (p.id !== editingId()) { <option [ngValue]="p.id">{{ p.name }}</option> }
+              }
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Icon (bootstrap-icon)</label>
+            <input class="form-control form-control-sm" [(ngModel)]="editDraft.icon" name="editIcon" />
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Thứ tự</label>
+            <input type="number" class="form-control form-control-sm" [(ngModel)]="editDraft.displayOrder" name="editOrder" />
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="editActive" [(ngModel)]="editDraft.isActive" name="editActive" />
+            <label class="form-check-label" for="editActive">Hoạt động</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" (click)="cancelEdit()">Hủy</button>
+          <button class="btn btn-primary" type="button" (click)="saveEdit(editingId())">Lưu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+@if (confirmDeleteId()) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Xác nhận xóa màn hình</h5>
+        </div>
+        <div class="modal-body">Bạn có chắc chắn muốn xóa màn hình chức năng này không?</div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" (click)="cancelDelete()">Hủy</button>
+          <button class="btn btn-danger" type="button" (click)="confirmDelete(confirmDeleteId())">Xóa</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showCreateModal()) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form (ngSubmit)="create()">
+          <div class="modal-header">
+            <h5 class="modal-title">Đăng ký màn hình mới</h5>
+          </div>
+          <div class="modal-body">
+            <div class="mb-2">
+              <label class="form-label small">Mã</label>
+              <input class="form-control form-control-sm" placeholder="vd: reports.custom" [(ngModel)]="newScreen.code" name="code" required />
+            </div>
+            <div class="mb-2">
+              <label class="form-label small">Tên hiển thị</label>
+              <input class="form-control form-control-sm" [(ngModel)]="newScreen.name" name="name" required />
+            </div>
+            <div class="mb-2">
+              <label class="form-label small">Route</label>
+              <input class="form-control form-control-sm" placeholder="Bỏ trống nếu là nhóm" [(ngModel)]="newScreen.route" name="route" />
+            </div>
+            <div class="mb-2">
+              <label class="form-label small">Nhóm cha</label>
+              <select class="form-select form-select-sm" [(ngModel)]="newScreen.parentId" name="parentId">
+                <option [ngValue]="null">— không thuộc nhóm —</option>
+                @for (p of possibleParents(); track p.id) { <option [ngValue]="p.id">{{ p.name }}</option> }
+              </select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small">Icon (bootstrap-icon)</label>
+              <input class="form-control form-control-sm" [(ngModel)]="newScreen.icon" name="icon" />
+            </div>
+            <div class="mb-2">
+              <label class="form-label small">Thứ tự</label>
+              <input type="number" class="form-control form-control-sm" [(ngModel)]="newScreen.displayOrder" name="displayOrder" />
+            </div>
+            <div class="text-muted small">
+              Đăng ký ở đây chỉ tạo mục trong danh mục màn hình — route Angular thực tế vẫn cần được lập trình sẵn
+              (bỏ trống route nếu chỉ muốn tạo nhóm submenu như "Hệ thống").
+              Sau khi đăng ký, vào <a routerLink="/roles">Vai trò</a> để gán quyền truy cập.
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" (click)="cancelCreate()">Hủy</button>
+            <button class="btn btn-primary" type="submit"><i class="bi bi-plus-lg"></i> Đăng ký</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}

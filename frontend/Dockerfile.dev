@@ -1,0 +1,22 @@
+# Dev-only image: runs `ng serve` against source bind-mounted by docker-compose.dev.yml. Not used
+# for production (a static build + nginx/CDN image is a separate concern, not written yet).
+FROM node:22-alpine
+
+# Alpine doesn't ship tzdata by default, so TZ alone would silently fall back to UTC.
+RUN apk add --no-cache tzdata
+ENV TZ=Asia/Ho_Chi_Minh
+
+WORKDIR /app
+
+# Installed once at image build time; docker-compose gives /app/node_modules its own named volume
+# (see deploy/docker-compose.dev.yml) so this Linux-native install is never shadowed by the host's
+# own (Windows-native, binary-incompatible) node_modules from the source bind mount.
+COPY package.json package-lock.json ./
+RUN npm ci
+
+EXPOSE 4300
+
+# --poll: Docker Desktop bind mounts from a Windows host don't reliably deliver native filesystem
+# change events, so fall back to polling. --host 0.0.0.0: the dev server must listen on all
+# interfaces to be reachable from outside the container via the published port.
+CMD ["node", "node_modules/@angular/cli/bin/ng.js", "serve", "--host", "0.0.0.0", "--port", "4300", "--poll", "1000", "--proxy-config", "proxy.docker.json"]

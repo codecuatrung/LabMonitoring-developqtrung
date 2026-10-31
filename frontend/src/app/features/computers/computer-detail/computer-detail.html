@@ -1,0 +1,134 @@
+@if (error(); as e) {
+  <div class="alert alert-danger">{{ e }}</div>
+}
+
+@if (computer(); as c) {
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><a routerLink="/rooms">Phòng máy</a></li>
+      <li class="breadcrumb-item"><a [routerLink]="['/rooms', c.roomId]">{{ c.roomName }}</a></li>
+      <li class="breadcrumb-item active">{{ c.name }}</li>
+    </ol>
+  </nav>
+
+  <div class="d-flex align-items-center mb-3">
+    <span class="badge {{ statusClass(c.status) }}">{{ statusLabel(c.status) }}</span>
+    @if (!c.isApproved) { <span class="badge text-bg-warning ms-2">chờ duyệt</span> }
+    @if (!c.isActive) { <span class="badge text-bg-secondary ms-2">ngưng hoạt động</span> }
+  </div>
+
+  <div class="mb-3">
+    <app-command-panel [target]="{ computerId: c.id }" [results]="commandResults()" />
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <div class="card"><div class="card-header">Thông tin</div>
+        <div class="card-body">
+          <dl class="row mb-0 small">
+            <dt class="col-5">Phòng</dt><dd class="col-7">{{ c.roomName }}</dd>
+            <dt class="col-5">Machine ID</dt><dd class="col-7 text-truncate">{{ c.machineId }}</dd>
+            <dt class="col-5">MAC</dt><dd class="col-7">{{ c.macAddress ?? '—' }}</dd>
+            <dt class="col-5">Agent</dt><dd class="col-7">{{ c.agentVersion ?? '—' }}</dd>
+            <dt class="col-5">Windows user</dt><dd class="col-7">{{ c.currentWindowsUser ?? '—' }}</dd>
+            <dt class="col-5">IP gần nhất</dt><dd class="col-7">{{ c.lastIpAddress ?? '—' }}</dd>
+            <dt class="col-5">Heartbeat</dt><dd class="col-7">{{ c.lastHeartbeatAt ? (c.lastHeartbeatAt | date: 'medium') : '—' }}</dd>
+            <dt class="col-5">Đăng ký</dt><dd class="col-7">{{ c.createdAt | date: 'short' }}</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card"><div class="card-header">Cấu hình phần cứng</div>
+        <div class="card-body">
+          @if (c.spec; as s) {
+            <dl class="row mb-0 small">
+              <dt class="col-5">CPU</dt><dd class="col-7">{{ s.cpuModel ?? '—' }} ({{ s.cpuCores ?? '?' }} nhân)</dd>
+              <dt class="col-5">RAM</dt><dd class="col-7">{{ s.ramTotalMB ? (s.ramTotalMB / 1024 | number: '1.0-1') + ' GB' : '—' }}</dd>
+              <dt class="col-5">Ổ đĩa</dt><dd class="col-7">{{ s.diskTotalGB ? s.diskTotalGB + ' GB' : '—' }}</dd>
+              <dt class="col-5">Hệ điều hành</dt><dd class="col-7">{{ s.osVersion ?? '—' }}</dd>
+            </dl>
+          } @else {
+            <span class="text-muted small">Chưa có dữ liệu phần cứng.</span>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <span>Lịch sử tài nguyên (gần đây)</span>
+          <button class="btn btn-sm btn-outline-danger" type="button" (click)="openDeleteMetricsModal()">
+            <i class="bi bi-trash"></i> Xoá lịch sử
+          </button>
+        </div>
+        @if (deleteMetricsMessage(); as msg) {
+          <div class="alert alert-success mb-0 rounded-0 py-2 small">{{ msg }}</div>
+        }
+        <div class="table-responsive">
+          <table class="table table-sm mb-0">
+            <thead><tr><th>Thời điểm</th><th>CPU %</th><th>RAM %</th><th>Disk %</th><th>Nhiệt độ</th></tr></thead>
+            <tbody>
+              @for (m of metricsResult()?.items ?? []; track m.recordedAt) {
+                <tr>
+                  <td>{{ m.recordedAt | date: 'medium' }}</td>
+                  <td>{{ m.cpuUsagePercent != null ? (m.cpuUsagePercent | number: '1.0-1') : '—' }}</td>
+                  <td>{{ m.ramUsagePercent != null ? (m.ramUsagePercent | number: '1.0-1') : '—' }}</td>
+                  <td>{{ m.diskUsagePercent != null ? (m.diskUsagePercent | number: '1.0-1') : '—' }}</td>
+                  <td>{{ m.temperatureC != null ? (m.temperatureC | number: '1.0-1') + '°C' : 'Không khả dụng' }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="text-muted">Chưa có dữ liệu.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (metricsResult(); as r) {
+          <div class="card-footer">
+            <app-pagination
+              [page]="metricsPage"
+              [pageSize]="metricsPageSize"
+              [totalCount]="r.totalCount"
+              (pageChange)="onMetricsPageChange($event)"
+              (pageSizeChange)="onMetricsPageSizeChange($event)"
+            />
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  @if (showDeleteMetricsModal()) {
+    <div class="modal d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.5)">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Xoá lịch sử tài nguyên</h5>
+          </div>
+          <div class="modal-body">
+            @if (deleteMetricsError(); as e) {
+              <div class="alert alert-danger py-2 small">{{ e }}</div>
+            }
+            <p class="small">
+              Xoá toàn bộ dữ liệu CPU/RAM/Disk/nhiệt độ đã ghi nhận của máy <strong>{{ c.name }}</strong>. Hành động
+              này không thể hoàn tác.
+            </p>
+            <label class="form-label small mb-1">Chỉ xoá dữ liệu trước ngày (để trống = xoá tất cả)</label>
+            <input class="form-control form-control-sm" type="date" [(ngModel)]="deleteMetricsBefore" name="deleteMetricsBefore" />
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" [disabled]="deletingMetrics()" (click)="closeDeleteMetricsModal()">Huỷ</button>
+            <button class="btn btn-danger" type="button" [disabled]="deletingMetrics()" (click)="confirmDeleteMetrics()">
+              @if (deletingMetrics()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+              Xoá
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+} @else if (!error()) {
+  <div class="text-muted">Đang tải…</div>
+}

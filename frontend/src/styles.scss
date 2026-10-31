@@ -1,0 +1,193 @@
+/* App-level global styles. Third-party CSS (Bootstrap, AdminLTE, icons) is loaded via angular.json. */
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  background: #f4f6f9;
+}
+
+/* Data-table look shared across the app (CoreProject/BSC template): a light-green header row,
+   bold labels, and a slightly heavier grid than Bootstrap's default. */
+.table > thead > tr > th {
+  background: #c6efce;
+  color: #1c3d1f;
+  font-weight: 600;
+  vertical-align: middle;
+  border-bottom-width: 1px;
+}
+
+.table > :not(caption) > * > * {
+  border-color: #d7e3d9;
+}
+
+.lm-pagination .form-select {
+  min-width: 4.5rem;
+}
+
+/* ---- Room grid (rooms list) ------------------------------------------------------------------ */
+.min-w-0 {
+  min-width: 0;
+}
+.lm-search {
+  max-width: 320px;
+  min-width: 220px;
+}
+
+/* Overview tiles */
+.lm-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  height: 100%;
+  padding: 0.85rem 1rem;
+  background: #fff;
+  border: 1px solid #e3e8ee;
+  border-radius: 0.6rem;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+.lm-stat-icon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 0.6rem;
+  font-size: 1.25rem;
+}
+.lm-stat-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.lm-stat-label {
+  font-size: 0.78rem;
+  color: #6c757d;
+}
+
+/* Status colours shared by the dots, the bar and the legend */
+.lm-dot {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  margin-right: 0.35rem;
+  border-radius: 50%;
+  background: #adb5bd;
+}
+.lm-dot-online { background: #198754; }
+.lm-dot-inuse { background: #0d6efd; }
+.lm-dot-warning { background: #f0ad00; }
+.lm-dot-offline { background: #adb5bd; }
+
+/* Room card */
+.lm-room-card {
+  border: 1px solid #e3e8ee;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+a.lm-room-card:hover,
+a.lm-room-card:focus-visible {
+  transform: translateY(-2px);
+  border-color: #86b7fe;
+  box-shadow: 0 6px 18px rgba(13, 110, 253, 0.12);
+}
+a.lm-room-card:focus-visible {
+  outline: 2px solid #0d6efd;
+  outline-offset: 2px;
+}
+.lm-room-card .card-body {
+  padding: 1.1rem 1.15rem;
+}
+.lm-room-icon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.65rem;
+  font-size: 1.4rem;
+  color: #0d6efd;
+  background: #e7f0ff;
+}
+.lm-room-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.lm-open {
+  color: #0d6efd;
+}
+a.lm-room-card:hover .lm-open i {
+  transform: translateX(3px);
+}
+.lm-open i {
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+
+/* Segmented status bar: share of the room's approved machines per state */
+.lm-statusbar {
+  display: flex;
+  width: 100%;
+  height: 0.6rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eef1f4;
+}
+.lm-statusbar-empty {
+  background: repeating-linear-gradient(45deg, #eef1f4, #eef1f4 6px, #f8f9fa 6px, #f8f9fa 12px);
+}
+.lm-seg {
+  height: 100%;
+  min-width: 4px;
+}
+.lm-seg-online { background: #198754; }
+.lm-seg-inuse { background: #0d6efd; }
+.lm-seg-warning { background: #f0ad00; }
+.lm-seg-offline { background: #ced4da; }
+.lm-legend {
+  column-gap: 0.9rem;
+  row-gap: 0.15rem;
+}
+.lm-legend-zero {
+  opacity: 0.45;
+}
+
+.lm-empty {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: #6c757d;
+  background: #fff;
+  border: 1px dashed #ced4da;
+  border-radius: 0.75rem;
+}
+.lm-empty i {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 2.2rem;
+  opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lm-room-card,
+  .lm-open i {
+    transition: none;
+  }
+  a.lm-room-card:hover {
+    transform: none;
+  }
+}

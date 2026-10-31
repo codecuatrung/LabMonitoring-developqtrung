@@ -1,0 +1,144 @@
+@if (error(); as e) {
+  <div class="alert alert-danger">{{ e }}</div>
+}
+
+@if (room(); as r) {
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><a routerLink="/rooms">Phòng máy</a></li>
+      <li class="breadcrumb-item active">{{ r.name }}</li>
+    </ol>
+  </nav>
+
+  <div class="d-flex align-items-center mb-3">
+    <span class="text-muted small">{{ r.buildingName }} · {{ active().length }}/{{ r.capacity }} máy</span>
+    <button class="btn btn-sm btn-outline-danger ms-auto" type="button" (click)="openDeleteMetricsModal()">
+      <i class="bi bi-trash"></i> Xoá lịch sử tài nguyên
+    </button>
+    <button class="btn btn-sm btn-outline-secondary ms-2" type="button" (click)="reload()">
+      <i class="bi bi-arrow-clockwise"></i>
+    </button>
+  </div>
+
+  @if (deleteMetricsMessage(); as msg) {
+    <div class="alert alert-success py-2 small">{{ msg }}</div>
+  }
+
+  <div class="card mb-3">
+    <div class="card-header">Ca thực hành</div>
+    <div class="card-body">
+      @if (activeSession(); as session) {
+        <div class="d-flex align-items-center flex-wrap gap-2">
+          <span class="badge text-bg-success">Đang diễn ra</span>
+          <span>{{ session.className }} — GV {{ session.teacherName }}</span>
+          <span class="text-muted small">từ {{ session.startedAt | date: 'short' }}</span>
+          <a class="btn btn-sm btn-primary ms-auto" [routerLink]="['/sessions', session.id]">Quản lý ca</a>
+        </div>
+      } @else {
+        <form class="row g-2 align-items-center" (ngSubmit)="startSession()">
+          <div class="col-auto text-muted small">Chưa có ca nào đang diễn ra.</div>
+          <div class="col">
+            <select class="form-select form-select-sm" [(ngModel)]="selectedClassId" name="startClass">
+              <option [ngValue]="0" disabled>— chọn lớp —</option>
+              @for (c of classes(); track c.id) { <option [ngValue]="c.id">{{ c.code }} — {{ c.name }}</option> }
+            </select>
+          </div>
+          <div class="col-auto">
+            <button class="btn btn-sm btn-success" type="submit" [disabled]="!selectedClassId">
+              <i class="bi bi-play-circle"></i> Bắt đầu ca
+            </button>
+          </div>
+        </form>
+      }
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <app-command-panel [target]="{ roomId: r.id }" [results]="commandResults()" />
+  </div>
+
+  @if (pending().length > 0) {
+    <div class="card border-warning mb-4">
+      <div class="card-header bg-warning-subtle">Máy chờ phê duyệt ({{ pending().length }})</div>
+      <ul class="list-group list-group-flush">
+        @for (c of pending(); track c.id) {
+          <li class="list-group-item d-flex align-items-center">
+            <span class="fw-semibold">{{ c.name }}</span>
+            <span class="text-muted small ms-2">đăng ký lúc {{ c.lastHeartbeatAt | date: 'short' }}</span>
+            <span class="ms-auto">
+              <button class="btn btn-sm btn-success me-2" type="button" (click)="approve(c)">Duyệt</button>
+              <button class="btn btn-sm btn-outline-danger" type="button" (click)="reject(c)">Từ chối</button>
+            </span>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  @if (active().length === 0) {
+    <div class="alert alert-info">Chưa có máy nào được duyệt trong phòng này.</div>
+  }
+
+  <div class="row g-2">
+    @for (c of active(); track c.id) {
+      <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+        <a [routerLink]="['/computers', c.id]" class="text-decoration-none">
+          <div class="card h-100" [class.opacity-50]="!c.isActive">
+            <div class="card-body p-2 text-center">
+              <i class="bi bi-pc-display fs-3"
+                 [class.text-success]="c.status === 'Online'"
+                 [class.text-primary]="c.status === 'InUse'"
+                 [class.text-warning]="c.status === 'Warning'"
+                 [class.text-secondary]="c.status === 'Offline'"></i>
+              <div class="fw-semibold small text-body">{{ c.name }}</div>
+              <span class="badge {{ statusClass(c.status) }}">{{ statusLabel(c.status) }}</span>
+              @if (c.currentWindowsUser) {
+                <div class="text-muted text-truncate" style="font-size: 0.72rem">
+                  <i class="bi bi-person"></i> {{ c.currentWindowsUser }}
+                </div>
+              }
+              @if (c.cpuUsagePercent != null) {
+                <div class="text-muted" style="font-size: 0.72rem">
+                  CPU {{ c.cpuUsagePercent | number: '1.0-0' }}% ·
+                  RAM {{ c.ramUsagePercent | number: '1.0-0' }}%
+                </div>
+              }
+            </div>
+          </div>
+        </a>
+      </div>
+    }
+  </div>
+
+  @if (showDeleteMetricsModal()) {
+    <div class="modal d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.5)">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Xoá lịch sử tài nguyên cả phòng</h5>
+          </div>
+          <div class="modal-body">
+            @if (deleteMetricsError(); as e) {
+              <div class="alert alert-danger py-2 small">{{ e }}</div>
+            }
+            <p class="small">
+              Xoá toàn bộ dữ liệu CPU/RAM/Disk/nhiệt độ đã ghi nhận của <strong>tất cả máy trong phòng {{ r.name }}</strong>.
+              Hành động này không thể hoàn tác.
+            </p>
+            <label class="form-label small mb-1">Chỉ xoá dữ liệu trước ngày (để trống = xoá tất cả)</label>
+            <input class="form-control form-control-sm" type="date" [(ngModel)]="deleteMetricsBefore" name="deleteMetricsBefore" />
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" [disabled]="deletingMetrics()" (click)="closeDeleteMetricsModal()">Huỷ</button>
+            <button class="btn btn-danger" type="button" [disabled]="deletingMetrics()" (click)="confirmDeleteMetrics()">
+              @if (deletingMetrics()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+              Xoá
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+} @else if (!error()) {
+  <div class="text-muted">Đang tải…</div>
+}

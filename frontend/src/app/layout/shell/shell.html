@@ -1,0 +1,97 @@
+<div class="lm-shell" [class.lm-sidebar-collapsed]="!sidebarOpen()">
+  <aside class="lm-sidebar">
+    <div class="lm-brand">
+      <i class="bi bi-display"></i>
+      <span class="lm-brand-text">Lab Monitoring</span>
+    </div>
+    <nav class="lm-nav">
+      @for (item of navTree(); track item.id) {
+        @if (item.route) {
+          <a class="lm-nav-link" [routerLink]="item.route" routerLinkActive="active">
+            <i class="bi" [class]="item.icon ?? 'bi-dot'"></i>
+            <span class="lm-nav-text">{{ item.name }}</span>
+          </a>
+        } @else if (item.children.length > 0) {
+          <button class="lm-nav-link lm-nav-group" type="button" (click)="toggleGroup(item.id)">
+            <i class="bi" [class]="item.icon ?? 'bi-dot'"></i>
+            <span class="lm-nav-text">{{ item.name }}</span>
+            <i class="bi ms-auto" [class.bi-chevron-down]="isGroupExpanded(item)" [class.bi-chevron-right]="!isGroupExpanded(item)"></i>
+          </button>
+          @if (isGroupExpanded(item)) {
+            <div class="lm-nav-children">
+              @for (child of item.children; track child.id) {
+                <a class="lm-nav-link" [routerLink]="child.route" routerLinkActive="active">
+                  <i class="bi" [class]="child.icon ?? 'bi-dot'"></i>
+                  <span class="lm-nav-text">{{ child.name }}</span>
+                </a>
+              }
+            </div>
+          }
+        }
+      }
+    </nav>
+  </aside>
+
+  <div class="lm-body">
+    <header class="lm-topbar">
+      <button class="btn btn-sm btn-light" type="button" (click)="toggleSidebar()" aria-label="Toggle sidebar">
+        <i class="bi bi-list"></i>
+      </button>
+
+      <h1 class="lm-page-title">{{ pageTitle() }}</h1>
+
+      <div class="ms-auto d-flex align-items-center gap-3">
+        <span class="lm-hub-status" [attr.data-state]="hub.status()">
+          <i class="bi bi-broadcast"></i> {{ hub.status() }}
+        </span>
+        <div class="dropdown">
+          <button class="btn btn-sm btn-light position-relative" data-bs-toggle="dropdown" type="button" aria-label="Thông báo">
+            <i class="bi bi-bell"></i>
+            @if (unreadCount() > 0) {
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-danger" style="font-size: 0.6rem">
+                {{ unreadCount() > 99 ? '99+' : unreadCount() }}
+              </span>
+            }
+          </button>
+          <div class="dropdown-menu dropdown-menu-end p-0" style="width: 340px; max-height: 420px; overflow-y: auto">
+            <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
+              <span class="fw-semibold small">Thông báo</span>
+              <button class="btn btn-sm btn-link p-0" type="button" (click)="markAllRead()" [disabled]="unreadCount() === 0">
+                Đánh dấu đã đọc tất cả
+              </button>
+            </div>
+            @for (n of notifications(); track n.id) {
+              <button
+                class="dropdown-item d-block border-bottom py-2"
+                type="button"
+                [class.bg-light]="!n.isRead"
+                (click)="markRead(n)"
+              >
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi" [class.bi-circle-fill]="!n.isRead" [class.text-primary]="!n.isRead" style="font-size: 0.5rem"></i>
+                  <span class="fw-semibold small">{{ n.title }}</span>
+                </div>
+                <div class="small text-muted text-wrap">{{ n.message }}</div>
+                <div class="text-muted" style="font-size: 0.7rem">{{ n.createdAt | date: 'short' }}</div>
+              </button>
+            } @empty {
+              <div class="px-3 py-4 text-center text-muted small">Không có thông báo.</div>
+            }
+          </div>
+        </div>
+        <div class="dropdown">
+          <button class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown" type="button">
+            <i class="bi bi-person-circle"></i> {{ displayName() }}
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><button class="dropdown-item" type="button" (click)="logout()">Đăng xuất</button></li>
+          </ul>
+        </div>
+      </div>
+    </header>
+
+    <main class="lm-content">
+      <router-outlet />
+    </main>
+  </div>
+</div>

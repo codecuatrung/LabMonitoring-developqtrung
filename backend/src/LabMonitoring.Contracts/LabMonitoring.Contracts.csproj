@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    DTOs shared across the backend layers (API endpoints, SignalR hub, command signing).
+    The LabAgent is an independent solution and keeps its own copy of the wire contract
+    under agent/src/LabMonitoring.Agent/Protocol — keep the two in sync (ProtocolVersion).
+    Keep this project dependency-free.
+  -->
+
+</Project>

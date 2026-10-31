@@ -1,0 +1,86 @@
+@if (error(); as e) {
+  <div class="alert alert-danger">{{ e }}</div>
+}
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form class="row g-2 align-items-end" (ngSubmit)="run()">
+      <div class="col-6 col-md-3">
+        <label class="form-label small mb-1">Phòng</label>
+        <select class="form-select form-select-sm" [(ngModel)]="roomId" name="roomId">
+          <option [ngValue]="0">Tất cả</option>
+          @for (r of rooms(); track r.id) { <option [ngValue]="r.id">{{ r.name }}</option> }
+        </select>
+      </div>
+      <div class="col-6 col-md-3">
+        <label class="form-label small mb-1">Lớp</label>
+        <select class="form-select form-select-sm" [(ngModel)]="classId" name="classId">
+          <option [ngValue]="0">Tất cả</option>
+          @for (c of classes(); track c.id) { <option [ngValue]="c.id">{{ c.code }} — {{ c.name }}</option> }
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label small mb-1">Từ ngày</label>
+        <input class="form-control form-control-sm" type="date" [(ngModel)]="from" name="from" />
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label small mb-1">Đến ngày</label>
+        <input class="form-control form-control-sm" type="date" [(ngModel)]="to" name="to" />
+      </div>
+      <div class="col-12 col-md-2 d-flex gap-2">
+        <button class="btn btn-sm btn-primary flex-fill" type="submit" [disabled]="loading()">
+          <i class="bi bi-search"></i> Lọc
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" type="button" (click)="export()" [disabled]="!report()">
+          <i class="bi bi-download"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+@if (report(); as r) {
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-3">
+      <div class="card text-center"><div class="card-body py-3">
+        <div class="h4 mb-0">{{ r.totalSessions }}</div>
+        <div class="text-muted small">Ca thực hành</div>
+      </div></div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card text-center"><div class="card-body py-3">
+        <div class="h4 mb-0">{{ r.totalMachineHours | number: '1.0-1' }}</div>
+        <div class="text-muted small">Giờ máy</div>
+      </div></div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card text-center"><div class="card-body py-3">
+        <div class="h4 mb-0">{{ r.totalStudents }}</div>
+        <div class="text-muted small">Sinh viên</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Theo phòng</div>
+    <div class="table-responsive">
+      <table class="table table-sm mb-0">
+        <thead><tr><th>Phòng</th><th>Số ca</th><th>Giờ máy</th><th>Số SV</th></tr></thead>
+        <tbody>
+          @for (row of r.rows; track row.roomId) {
+            <tr>
+              <td>{{ row.roomName }}</td>
+              <td>{{ row.sessionCount }}</td>
+              <td>{{ row.machineHours | number: '1.0-1' }}</td>
+              <td>{{ row.studentCount }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="4" class="text-muted">Không có dữ liệu trong khoảng thời gian này.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+} @else if (loading()) {
+  <div class="text-muted">Đang tải…</div>
+}

@@ -1,0 +1,304 @@
+@if (error(); as e) {
+  <div class="alert alert-danger py-2 small" (click)="error.set(null)" role="alert">{{ e }}</div>
+}
+
+<ul class="nav nav-tabs mb-3">
+  <li class="nav-item"><button class="nav-link" type="button" [class.active]="tab() === 'push'" (click)="setTab('push')"><i class="bi bi-cloud-arrow-down"></i> Gửi file xuống máy</button></li>
+  <li class="nav-item"><button class="nav-link" type="button" [class.active]="tab() === 'collect'" (click)="setTab('collect')"><i class="bi bi-cloud-arrow-up"></i> Thu file từ máy</button></li>
+  <li class="nav-item"><button class="nav-link" type="button" [class.active]="tab() === 'folders'" (click)="setTab('folders')"><i class="bi bi-folder2-open"></i> Thư mục cho phép</button></li>
+  <li class="nav-item"><button class="nav-link" type="button" [class.active]="tab() === 'history'" (click)="setTab('history')"><i class="bi bi-clock-history"></i> Lịch sử</button></li>
+</ul>
+
+@if (tab() === 'push' || tab() === 'collect') {
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-12 col-md-3">
+          <label class="form-label small mb-1">Đối tượng</label>
+          <select class="form-select form-select-sm" [(ngModel)]="targetKind" name="targetKind">
+            <option value="room">Cả phòng máy</option>
+            <option value="computer">Một máy</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label small mb-1">Phòng máy</label>
+          <select class="form-select form-select-sm" [(ngModel)]="roomId" name="roomId" (ngModelChange)="onTargetChanged()">
+            @for (r of rooms(); track r.id) {
+              <option [ngValue]="r.id">{{ r.name }} ({{ r.code }})</option>
+            }
+          </select>
+        </div>
+        @if (targetKind === 'computer') {
+          <div class="col-12 col-md-3">
+            <label class="form-label small mb-1">Máy</label>
+            <select class="form-select form-select-sm" [(ngModel)]="computerId" name="computerId">
+              @for (c of roomComputers(); track c.id) {
+                <option [ngValue]="c.id">{{ c.name }}</option>
+              }
+            </select>
+          </div>
+        }
+      </div>
+
+      <hr />
+
+      @if (tab() === 'push') {
+        <div class="row g-3">
+          <div class="col-12 col-md-4">
+            <label class="form-label small mb-1">Thư mục đích trên máy khách</label>
+            <select class="form-select form-select-sm" [(ngModel)]="pushFolderId" name="pushFolderId">
+              @for (f of pushFolders(); track f.id) {
+                <option [ngValue]="f.id">{{ f.label }} — {{ f.path }}</option>
+              } @empty {
+                <option [ngValue]="null" disabled>Chưa có thư mục nào được cho phép</option>
+              }
+            </select>
+          </div>
+          <div class="col-12 col-md-5">
+            <label class="form-label small mb-1">File (tối đa 500 MB, không gửi file .exe/.bat/.ps1…)</label>
+            <input class="form-control form-control-sm" type="file" (change)="onFileSelected($event)" />
+            @if (file) { <div class="form-text">{{ file.name }} · {{ formatSize(file.size) }}</div> }
+          </div>
+          <div class="col-12 col-md-3 d-flex align-items-end">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="overwrite" [(ngModel)]="overwrite" name="overwrite" />
+              <label class="form-check-label small" for="overwrite">Ghi đè nếu đã có file cùng tên</label>
+            </div>
+          </div>
+        </div>
+
+        @if (uploadPercent() !== null) {
+          <div class="progress mt-3" role="progressbar" style="height: 18px">
+            <div class="progress-bar" [style.width.%]="uploadPercent()">Đang tải lên máy chủ… {{ uploadPercent() }}%</div>
+          </div>
+        }
+
+        <div class="mt-3">
+          <button class="btn btn-primary btn-sm" type="button" [disabled]="!canPush()" (click)="startPush()">
+            <i class="bi bi-send"></i> Gửi file tới {{ targetLabel() }}
+          </button>
+        </div>
+      } @else {
+        <div class="row g-3">
+          <div class="col-12 col-md-5">
+            <label class="form-label small mb-1">Thư mục nguồn trên máy khách</label>
+            <select class="form-select form-select-sm" [(ngModel)]="collectFolderId" name="collectFolderId">
+              @for (f of collectFolders(); track f.id) {
+                <option [ngValue]="f.id">{{ f.label }} — {{ f.path }}</option>
+              } @empty {
+                <option [ngValue]="null" disabled>Chưa có thư mục nào được cho phép</option>
+              }
+            </select>
+          </div>
+          <div class="col-12 col-md-5">
+            <label class="form-label small mb-1">Bộ lọc tên file (để trống = tất cả; cách nhau bằng dấu ;)</label>
+            <input class="form-control form-control-sm" [(ngModel)]="filterText" name="filterText" placeholder="*.docx;*.pdf" />
+          </div>
+        </div>
+        <div class="alert alert-warning py-2 small mt-3 mb-0">
+          <i class="bi bi-shield-exclamation"></i>
+          Hệ thống sẽ nén và thu toàn bộ file khớp bộ lọc (tối đa 200 MB mỗi máy) về máy chủ. Thao tác này được ghi vào nhật ký.
+        </div>
+        <div class="mt-3">
+          <button class="btn btn-primary btn-sm" type="button" [disabled]="!canCollect()" (click)="startCollect()">
+            <i class="bi bi-download"></i> Thu file từ {{ targetLabel() }}
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+
+  @if (active(); as d) {
+    <div class="card">
+      <div class="card-header d-flex align-items-center">
+        <span>
+          {{ d.transfer.direction === 'Push' ? 'Gửi' : 'Thu' }} #{{ d.transfer.id }}
+          @if (d.transfer.fileName) { — {{ d.transfer.fileName }} ({{ formatSize(d.transfer.sizeBytes) }}) }
+          → <code>{{ d.transfer.folderPath }}</code>
+        </span>
+        <span class="ms-auto small text-muted">
+          @if (isRunning()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          {{ summary().done }}/{{ summary().total }} xong
+          @if (summary().failed > 0) { · <span class="text-danger">{{ summary().failed }} lỗi</span> }
+          @if (summary().pending > 0) { · {{ summary().pending }} đang xử lý }
+        </span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+          <thead>
+            <tr>
+              <th>Máy</th><th>Trạng thái</th>
+              @if (d.transfer.direction === 'Collect') { <th>Kết quả thu</th> }
+              <th>Thời điểm</th><th>Lỗi</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of d.targets; track t.computerId) {
+              <tr>
+                <td>{{ t.computerName }}</td>
+                <td><span class="badge {{ commandStatusClass(t.status) }}">{{ commandStatusLabel(t.status) }}</span></td>
+                @if (d.transfer.direction === 'Collect') {
+                  <td>
+                    @if (t.collectedBytes != null) {
+                      {{ t.collectedFileCount }} file · {{ formatSize(t.collectedBytes) }}
+                      @if (t.collectedTruncated) { <span class="badge text-bg-warning ms-1" title="Đạt giới hạn dung lượng, một số file bị bỏ qua">bị cắt</span> }
+                      <button class="btn btn-link btn-sm py-0" type="button" (click)="download(d.transfer.id, t.computerId, t.computerName)">
+                        <i class="bi bi-download"></i> Tải zip
+                      </button>
+                    } @else { — }
+                  </td>
+                }
+                <td>{{ t.executedAt ? (t.executedAt | date: 'medium') : '—' }}</td>
+                <td class="text-danger small">{{ t.errorMessage ?? '' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+}
+
+@if (tab() === 'folders') {
+  <p class="text-muted small">
+    Chỉ những thư mục trong danh sách này mới được ghi vào (Gửi) hoặc đọc từ (Thu) trên máy khách. Chỉ Administrator
+    được sửa danh sách. Dùng đường dẫn ổ đĩa như <code>D:\BaiTap</code> hoặc biến hệ thống như <code>%PUBLIC%\Desktop</code>.
+  </p>
+  <div class="card">
+    <div class="card-header d-flex justify-content-end">
+      <button class="btn btn-sm btn-primary" type="button" (click)="newFolder()"><i class="bi bi-plus-lg"></i> Thêm thư mục</button>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm mb-0 align-middle">
+        <thead><tr><th>Nhãn</th><th>Đường dẫn</th><th>Loại</th><th>Phòng</th><th>Trạng thái</th><th></th></tr></thead>
+        <tbody>
+          @for (f of allFolders(); track f.id) {
+            <tr>
+              <td>{{ f.label }}</td>
+              <td><code>{{ f.path }}</code></td>
+              <td>{{ f.direction === 'Push' ? 'Gửi xuống' : 'Thu về' }}</td>
+              <td>{{ f.roomName ?? 'Mọi phòng' }}</td>
+              <td>@if (f.isActive) { <span class="badge text-bg-success">Đang dùng</span> } @else { <span class="badge text-bg-secondary">Tắt</span> }</td>
+              <td class="text-end">
+                <button class="btn btn-sm btn-outline-secondary me-1" type="button" (click)="editFolder(f)"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-sm btn-outline-danger" type="button" (click)="askDeleteFolder(f)"><i class="bi bi-trash"></i></button>
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="6" class="text-muted">Chưa có thư mục nào. Thêm thư mục để bắt đầu gửi/thu file.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}
+
+@if (tab() === 'history') {
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-sm mb-0 align-middle">
+        <thead><tr><th>#</th><th>Loại</th><th>Đối tượng</th><th>File / Bộ lọc</th><th>Thư mục</th><th>Người thực hiện</th><th>Thời điểm</th><th></th></tr></thead>
+        <tbody>
+          @for (h of history(); track h.id) {
+            <tr>
+              <td>{{ h.id }}</td>
+              <td>{{ h.direction === 'Push' ? 'Gửi' : 'Thu' }}</td>
+              <td>{{ h.computerName ?? h.roomName ?? '—' }}</td>
+              <td>{{ h.fileName ?? h.filter ?? 'Tất cả' }} @if (h.sizeBytes) { <span class="text-muted">({{ formatSize(h.sizeBytes) }})</span> }</td>
+              <td><code>{{ h.folderPath }}</code></td>
+              <td>{{ h.createdByName ?? '—' }}</td>
+              <td>{{ h.createdAt | date: 'medium' }}</td>
+              <td><button class="btn btn-link btn-sm py-0" type="button" (click)="openHistory(h.id)">Chi tiết</button></td>
+            </tr>
+          } @empty {
+            <tr><td colspan="8" class="text-muted">Chưa có lần gửi/thu file nào.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}
+
+@if (confirmKind(); as kind) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Xác nhận {{ kind === 'push' ? 'gửi file' : 'thu file' }} cả phòng</h5></div>
+        <div class="modal-body">
+          @if (kind === 'push') {
+            Gửi <strong>{{ file?.name }}</strong> ({{ formatSize(file?.size) }}) tới <strong>tất cả</strong> máy đã duyệt trong phòng
+            @if (overwrite) { — <span class="text-danger">sẽ ghi đè file cùng tên</span> }.
+          } @else {
+            Thu file (<strong>{{ filterText || 'tất cả' }}</strong>) từ <strong>tất cả</strong> máy đã duyệt trong phòng về máy chủ.
+          }
+          Bạn có chắc chắn không?
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" (click)="cancelConfirm()">Hủy</button>
+          <button class="btn btn-primary" type="button" (click)="confirmRoomWide()">Xác nhận</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+@if (folderEditor(); as editor) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form (ngSubmit)="saveFolder()">
+          <div class="modal-header"><h5 class="modal-title">{{ editor.id == null ? 'Thêm' : 'Sửa' }} thư mục cho phép</h5></div>
+          <div class="modal-body">
+            @if (error(); as e) { <div class="alert alert-danger py-2 small">{{ e }}</div> }
+            <label class="form-label small">Nhãn hiển thị</label>
+            <input class="form-control form-control-sm mb-3" [(ngModel)]="folderForm.label" name="fLabel" required />
+
+            <label class="form-label small">Đường dẫn trên máy khách</label>
+            <input class="form-control form-control-sm mb-3" [(ngModel)]="folderForm.path" name="fPath" placeholder="D:\BaiTap" required />
+
+            <div class="row g-3">
+              <div class="col-6">
+                <label class="form-label small">Loại</label>
+                <select class="form-select form-select-sm" [(ngModel)]="folderForm.direction" name="fDir">
+                  <option value="Push">Gửi xuống máy</option>
+                  <option value="Collect">Thu về máy chủ</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label small">Áp dụng cho</label>
+                <select class="form-select form-select-sm" [(ngModel)]="folderForm.roomId" name="fRoom">
+                  <option [ngValue]="null">Mọi phòng</option>
+                  @for (r of rooms(); track r.id) { <option [ngValue]="r.id">{{ r.name }}</option> }
+                </select>
+              </div>
+            </div>
+
+            <div class="form-check mt-3">
+              <input class="form-check-input" type="checkbox" id="fActive" [(ngModel)]="folderForm.isActive" name="fActive" />
+              <label class="form-check-label small" for="fActive">Đang sử dụng</label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" (click)="closeFolderEditor()">Hủy</button>
+            <button class="btn btn-primary" type="submit" [disabled]="!folderForm.label.trim() || !folderForm.path.trim()">Lưu</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}
+
+@if (folderToDelete(); as f) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Xóa thư mục</h5></div>
+        <div class="modal-body">Xóa <strong>{{ f.label }}</strong> (<code>{{ f.path }}</code>) khỏi danh sách cho phép? Lịch sử truyền file vẫn được giữ.</div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" (click)="cancelDeleteFolder()">Hủy</button>
+          <button class="btn btn-danger" type="button" (click)="confirmDeleteFolder()">Xóa</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

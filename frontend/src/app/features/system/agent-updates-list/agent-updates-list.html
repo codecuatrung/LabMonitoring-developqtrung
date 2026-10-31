@@ -1,0 +1,68 @@
+@if (error(); as e) {
+  <div class="alert alert-danger" (click)="error.set(null)">{{ e }}</div>
+}
+
+<p class="text-muted small">
+  Bản mới nhất được upload ở đây sẽ là bản mà nút "Cập nhật Agent" (ở Chi tiết máy / Chi tiết phòng)
+  đẩy xuống. Gói phải là kết quả của <code>agent/build/publish.ps1</code> nén lại thành 1 file .zip.
+</p>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-end">
+    <button class="btn btn-sm btn-primary" type="button" (click)="openUploadModal()">
+      <i class="bi bi-upload"></i> Upload phiên bản mới
+    </button>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0 align-middle">
+      <thead><tr><th>Phiên bản</th><th>File</th><th>Kích thước</th><th>Người upload</th><th>Thời điểm</th></tr></thead>
+      <tbody>
+        @for (p of packages(); track p.id; let i = $index) {
+          <tr>
+            <td>
+              {{ p.version }}
+              @if (i === 0) { <span class="badge text-bg-success ms-1">hiện hành</span> }
+            </td>
+            <td class="text-muted small">{{ p.fileName }}</td>
+            <td>{{ formatSize(p.fileSizeBytes) }}</td>
+            <td>{{ p.uploadedByName ?? 'Hệ thống' }}</td>
+            <td>{{ p.uploadedAt | date: 'medium' }}</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="5" class="text-muted">Chưa có phiên bản nào được upload.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@if (showUploadModal()) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form (ngSubmit)="upload()">
+          <div class="modal-header">
+            <h5 class="modal-title">Upload phiên bản Agent mới</h5>
+          </div>
+          <div class="modal-body">
+            @if (error(); as e) {
+              <div class="alert alert-danger py-2 small">{{ e }}</div>
+            }
+            <label class="form-label small">Phiên bản (vd: 1.1.0)</label>
+            <input class="form-control form-control-sm mb-3" [(ngModel)]="version" name="version" required />
+
+            <label class="form-label small">File .zip (kết quả publish.ps1)</label>
+            <input class="form-control form-control-sm" type="file" accept=".zip" (change)="onFileSelected($event)" required />
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" [disabled]="uploading()" (click)="closeUploadModal()">Hủy</button>
+            <button class="btn btn-primary" type="submit" [disabled]="uploading() || !version.trim() || !file">
+              @if (uploading()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+              <i class="bi bi-upload"></i> Upload
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}

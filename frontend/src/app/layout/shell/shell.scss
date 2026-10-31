@@ -1,0 +1,143 @@
+:host {
+  display: block;
+  height: 100vh;
+}
+
+.lm-shell {
+  --lm-sidebar-width: 250px;
+  display: grid;
+  grid-template-columns: var(--lm-sidebar-width) 1fr;
+  height: 100%;
+  transition: grid-template-columns 0.15s ease;
+
+  &.lm-sidebar-collapsed {
+    --lm-sidebar-width: 0px;
+  }
+}
+
+.lm-sidebar {
+  background: #1f2d3d;
+  color: #c2c7d0;
+  overflow: hidden auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.lm-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1rem 1.25rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+}
+
+.lm-nav {
+  padding: 0.75rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+
+  .lm-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.85rem;
+    border-radius: 0.375rem;
+    color: #c2c7d0;
+    text-decoration: none;
+    white-space: nowrap;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    &.active {
+      background: #0d6efd;
+      color: #fff;
+    }
+
+    &.disabled {
+      opacity: 0.55;
+      pointer-events: none;
+    }
+  }
+
+  .lm-nav-group {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .lm-nav-children {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+
+    .lm-nav-link {
+      padding-left: 2.3rem;
+      font-size: 0.92rem;
+    }
+  }
+}
+
+.lm-body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.lm-topbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: #fff;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.lm-page-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2d3d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lm-content {
+  padding: 1.25rem;
+  overflow: auto;
+  flex: 1;
+  background: #f4f6f9;
+}
+
+.lm-hub-status {
+  font-size: 0.8rem;
+  text-transform: capitalize;
+  color: #6c757d;
+
+  &[data-state='connected'] {
+    color: #198754;
+  }
+  &[data-state='connecting'] {
+    color: #fd7e14;
+  }
+}
+
+@media (max-width: 768px) {
+  .lm-shell {
+    grid-template-columns: 0 1fr;
+  }
+  .lm-shell:not(.lm-sidebar-collapsed) {
+    grid-template-columns: var(--lm-sidebar-width) 1fr;
+  }
+}

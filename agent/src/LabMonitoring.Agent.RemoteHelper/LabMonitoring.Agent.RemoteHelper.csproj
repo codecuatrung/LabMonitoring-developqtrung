@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- Was true — prime suspect for the native STATUS_DLL_INIT_FAILED crash this helper hit when
+         launched into an interactive session (ADR-0013): Procmon showed it dying right after
+         querying locale-dependent registry keys (GRE_Initialize, IME Compatibility) during WinForms/
+         GDI init, and a sibling project (LabMonitoring.Agent.csproj) with the same setting threw a
+         *managed* System.Globalization.CultureNotFoundException from an unrelated library, which is
+         what actually surfaced the connection to globalization-invariant mode. -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <AssemblyName>LabMonitoring.Agent.RemoteHelper</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SIPSorcery" />
+    <PackageReference Include="SIPSorceryMedia.Abstractions" />
+    <PackageReference Include="SIPSorceryMedia.Encoders" />
+  </ItemGroup>
+
+</Project>

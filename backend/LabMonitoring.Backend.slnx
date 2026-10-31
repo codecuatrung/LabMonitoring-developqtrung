@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LabMonitoring.Domain/LabMonitoring.Domain.csproj" />
+    <Project Path="src/LabMonitoring.Application/LabMonitoring.Application.csproj" />
+    <Project Path="src/LabMonitoring.Infrastructure/LabMonitoring.Infrastructure.csproj" />
+    <Project Path="src/LabMonitoring.Contracts/LabMonitoring.Contracts.csproj" />
+    <Project Path="src/LabMonitoring.Api/LabMonitoring.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/LabMonitoring.IntegrationTests/LabMonitoring.IntegrationTests.csproj" />
+    <Project Path="tests/LabMonitoring.UnitTests/LabMonitoring.UnitTests.csproj" />
+  </Folder>
+</Solution>

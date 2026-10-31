@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <UserSecretsId>labmonitoring-agent</UserSecretsId>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>LabMonitoring.Agent</AssemblyName>
+    <!-- Deployable to Windows client machines; Linux target comes later. -->
+    <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- Was true — caused System.Globalization.CultureNotFoundException inside the TaskScheduler
+         library's static init (ADR-0013) and is suspected to be the underlying cause of the
+         remote-control helper's native STATUS_DLL_INIT_FAILED crash too (WinForms/GDI init touches
+         locale-dependent Win32 calls). -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
+    <PackageReference Include="Serilog.Extensions.Hosting" />
+    <PackageReference Include="Serilog.Settings.Configuration" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Sinks.File" />
+    <PackageReference Include="System.Management" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" />
+    <PackageReference Include="TaskScheduler" />
+  </ItemGroup>
+
+</Project>

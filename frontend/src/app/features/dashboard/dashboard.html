@@ -1,0 +1,66 @@
+<div class="d-flex align-items-center mb-4">
+  <span class="badge" [class.text-bg-success]="hub.status() === 'connected'"
+        [class.text-bg-warning]="hub.status() === 'connecting'"
+        [class.text-bg-secondary]="hub.status() === 'disconnected'">
+    realtime: {{ hub.status() }}
+  </span>
+  <button class="btn btn-sm btn-outline-secondary ms-auto" type="button" (click)="load()">
+    <i class="bi bi-arrow-clockwise"></i> Làm mới
+  </button>
+</div>
+
+@if (error(); as e) {
+  <div class="alert alert-danger">{{ e }}</div>
+}
+
+@if (summary(); as s) {
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <a routerLink="/rooms" class="text-decoration-none">
+        <div class="card text-bg-primary h-100"><div class="card-body">
+          <div class="fs-2 fw-bold">{{ s.rooms }}</div><div>Phòng máy</div>
+        </div></div>
+      </a>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card text-bg-success h-100"><div class="card-body">
+        <div class="fs-2 fw-bold">{{ s.online + s.inUse }}</div><div>Máy Online</div>
+      </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card text-bg-secondary h-100"><div class="card-body">
+        <div class="fs-2 fw-bold">{{ s.offline }}</div><div>Máy Offline</div>
+      </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card text-bg-warning h-100"><div class="card-body">
+        <div class="fs-2 fw-bold">{{ s.warning }}</div><div>Cảnh báo</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-4">
+      <div class="card"><div class="card-body">
+        <div class="text-muted small">Tổng số máy</div>
+        <div class="fs-4 fw-semibold">{{ s.computers }}</div>
+      </div></div>
+    </div>
+    <div class="col-md-4">
+      <div class="card"><div class="card-body">
+        <div class="text-muted small">Đang sử dụng</div>
+        <div class="fs-4 fw-semibold">{{ s.inUse }}</div>
+      </div></div>
+    </div>
+    <div class="col-md-4">
+      <a routerLink="/rooms" class="text-decoration-none">
+        <div class="card" [class.border-warning]="s.pendingApproval > 0"><div class="card-body">
+          <div class="text-muted small">Máy chờ duyệt</div>
+          <div class="fs-4 fw-semibold" [class.text-warning]="s.pendingApproval > 0">{{ s.pendingApproval }}</div>
+        </div></div>
+      </a>
+    </div>
+  </div>
+} @else if (!error()) {
+  <div class="text-muted">Đang tải…</div>
+}

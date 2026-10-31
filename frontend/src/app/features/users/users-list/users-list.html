@@ -1,0 +1,158 @@
+@if (error(); as e) {
+  <div class="alert alert-danger">{{ e }}</div>
+}
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-sm mb-0 align-middle">
+      <thead><tr><th>Tên đăng nhập</th><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Trạng thái</th><th></th></tr></thead>
+      <tbody>
+        @for (u of users(); track u.id) {
+          <tr [class.opacity-50]="!u.isActive">
+            <td>{{ u.username }}</td>
+            <td>{{ u.fullName }}</td>
+            <td>{{ u.email ?? '—' }}</td>
+            <td>
+              @for (r of u.roles; track r) { <span class="badge text-bg-secondary me-1">{{ r }}</span> }
+              @if (u.roles.length === 0) { <span class="text-muted small">chưa có</span> }
+            </td>
+            <td>
+              @if (u.isActive) {
+                <span class="badge text-bg-success">Hoạt động</span>
+              } @else {
+                <span class="badge text-bg-secondary">Vô hiệu hoá</span>
+              }
+            </td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-primary" type="button" (click)="openManageModal(u)">Quản lý</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="6" class="text-muted">Chưa có người dùng nào.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer">
+    <app-pagination
+      [page]="page"
+      [pageSize]="pageSize"
+      [totalCount]="totalCount()"
+      (pageChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
+    />
+  </div>
+</div>
+
+@if (manageUser(); as u) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Quản lý người dùng — {{ u.username }}</h5>
+        </div>
+        <div class="modal-body">
+          @if (saved()) {
+            <div class="alert alert-success py-2">Đã lưu.</div>
+          }
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-header">Thông tin</div>
+                <div class="card-body">
+                  <div class="mb-2">
+                    <label class="form-label small">Họ tên</label>
+                    <input class="form-control form-control-sm" [(ngModel)]="fullName" name="fullName" />
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label small">Điện thoại</label>
+                    <input class="form-control form-control-sm" [(ngModel)]="phone" name="phone" />
+                  </div>
+                  <div class="mb-2 text-muted small">Email: {{ u.email ?? '—' }} (đồng bộ từ Keycloak)</div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="isActive" [(ngModel)]="isActive" name="isActive" />
+                    <label class="form-check-label" for="isActive">Tài khoản hoạt động</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="card mb-3">
+                <div class="card-header">Vai trò</div>
+                <div class="card-body">
+                  @for (r of roles(); track r.id) {
+                    <div class="form-check">
+                      <input
+                        class="form-check-input"
+                        type="checkbox"
+                        [id]="'role-' + r.id"
+                        [checked]="selectedRoleIds().has(r.id)"
+                        (change)="toggleRole(r.id)"
+                      />
+                      <label class="form-check-label" [for]="'role-' + r.id">{{ r.name }}</label>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              @if (needsRoomScope()) {
+                <div class="card mb-3">
+                  <div class="card-header">Phạm vi phòng (Technician / Teacher)</div>
+                  <div class="card-body" style="max-height: 200px; overflow-y: auto">
+                    @for (r of rooms(); track r.id) {
+                      <div class="form-check">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          [id]="'room-' + r.id"
+                          [checked]="selectedRoomIds().has(r.id)"
+                          (change)="toggleRoom(r.id)"
+                        />
+                        <label class="form-check-label" [for]="'room-' + r.id">{{ r.name }} ({{ r.code }})</label>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+
+              <div class="card">
+                <div class="card-header">Ghi đè quyền truy cập màn hình (độc lập với vai trò)</div>
+                <div class="table-responsive" style="max-height: 260px; overflow-y: auto">
+                  <table class="table table-sm mb-0">
+                    <thead><tr><th>Màn hình</th><th class="text-center">Theo vai trò</th><th class="text-center">Luôn cho phép</th><th class="text-center">Luôn từ chối</th></tr></thead>
+                    <tbody>
+                      @for (row of screenRows(); track row.screen.id) {
+                        <tr>
+                          <td [style.paddingLeft.rem]="row.depth ? 1.5 : 0">
+                            <i class="bi" [class]="row.screen.icon ?? 'bi-dot'"></i> {{ row.screen.name }}
+                          </td>
+                          <td class="text-center">
+                            <input type="radio" [name]="'ov-' + row.screen.id" [checked]="overrideState(row.screen.id) === undefined" (change)="setOverrideState(row.screen.id, undefined)" />
+                          </td>
+                          <td class="text-center">
+                            <input type="radio" [name]="'ov-' + row.screen.id" [checked]="overrideState(row.screen.id) === true" (change)="setOverrideState(row.screen.id, true)" />
+                          </td>
+                          <td class="text-center">
+                            <input type="radio" [name]="'ov-' + row.screen.id" [checked]="overrideState(row.screen.id) === false" (change)="setOverrideState(row.screen.id, false)" />
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" (click)="closeManageModal()">Hủy</button>
+          <button class="btn btn-primary" type="button" (click)="save()">
+            <i class="bi bi-save"></i> Lưu thay đổi
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

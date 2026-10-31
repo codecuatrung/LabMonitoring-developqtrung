@@ -1,0 +1,8 @@
+# Cau hinh cho install-service.ps1 - sua 2 dong ben duoi roi luu file, khong can truyen tham so
+# dong lenh. Dong bat dau bang # la ghi chu, bi bo qua.
+#
+# ServerBaseUrl: dia chi API cua may chu Lab Monitoring (co ca http:// hoac https://, KHONG co dau / o cuoi).
+# RoomCode:      ma phong may (vd LAB-01) - de trong neu may nay se duoc dang ky bang cach khac.
+
+ServerBaseUrl=http://192.168.1.28:5200
+RoomCode=LAB-01

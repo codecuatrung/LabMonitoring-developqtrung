@@ -1,0 +1,152 @@
+# Local dev stack for Lab Monitoring — infra (redis/seq/minio) plus, as of 2026-09-14, the backend
+# API and Angular frontend themselves, hot-reloading from the working tree via bind mounts.
+#
+# SQL Server is NOT here — it runs natively on this machine (server "MVT") and is reached from the
+# `api` container via the Docker Desktop hostname `host.docker.internal`.
+# Keycloak is NOT here either - the realm "coreproject" is served by the external HUPH SSO\n# (https://sso2.huph.edu.vn), reached over the internet (the api container needs outbound HTTPS).
+#
+# Secrets (SA_PASSWORD, MINIO_ROOT_PASSWORD) come from a git-ignored deploy/.env — copy
+# deploy/.env.example to deploy/.env and fill in real values before running this file.
+#
+#   docker compose -f deploy/docker-compose.dev.yml up
+#
+# Same URLs as running natively: API http://localhost:5200 (Scalar at /scalar/v1), frontend
+# http://localhost:4300. `dotnet ef`/migrations still run from the host against MVT directly,
+# unchanged — see README.md.
+#
+# To go back to running backend/frontend natively instead: `docker compose -f
+# deploy/docker-compose.dev.yml up redis seq minio` starts only the infra services, same as before
+# this file grew the api/frontend services.
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: labmonitoring-redis
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  seq:
+    image: datalust/seq:latest
+    container_name: labmonitoring-seq
+    environment:
+      ACCEPT_EULA: "Y"
+      # A newer Seq image than this file was originally written against now refuses to start
+      # without an explicit auth choice on first run; local dev has no need for a login.
+      SEQ_FIRSTRUN_NOAUTHENTICATION: "true"
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "5341:80"     # Seq UI + ingestion
+    volumes:
+      - seq-data:/data
+
+  minio:
+    image: minio/minio:latest
+    container_name: labmonitoring-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: labmonitoring
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "9000:9000"   # S3 API — screenshot store stand-in for the Synology NAS
+      - "9001:9001"   # MinIO console
+    volumes:
+      - minio-data:/data
+
+  api:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.dev
+    container_name: labmonitoring-api
+    ports:
+      - "5200:5200"
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:5200
+      ConnectionStrings__SqlServer: "Server=host.docker.internal;Database=LabMonitoring;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;Encrypt=True;MultipleActiveResultSets=True"
+      ConnectionStrings__Redis: redis:6379
+      Keycloak__Authority: https://sso2.huph.edu.vn/realms/coreproject
+      Keycloak__InternalAuthority: https://sso2.huph.edu.vn/realms/coreproject
+      Keycloak__RequireHttpsMetadata: "true"
+      Serilog__WriteTo__1__Args__serverUrl: http://seq:80
+    volumes:
+      - ../backend:/src
+      - api-nuget-cache:/root/.nuget/packages
+      # Same reasoning as frontend's node_modules/.angular volumes below: bind-mounting bin/obj from
+      # the host caused a real container crash — this repo's dev workflow ALSO runs `dotnet build`/
+      # `dotnet ef` natively on the Windows host (for migrations, tests, etc.), and those runs write
+      # Windows-path build manifests into bin/obj that the Linux container then can't read. Give
+      # every project's bin/obj its own volume so each side keeps independent, platform-correct
+      # build output while the actual *source* stays shared via the bind mount above.
+      - api-bin-domain:/src/src/LabMonitoring.Domain/bin
+      - api-obj-domain:/src/src/LabMonitoring.Domain/obj
+      - api-bin-contracts:/src/src/LabMonitoring.Contracts/bin
+      - api-obj-contracts:/src/src/LabMonitoring.Contracts/obj
+      - api-bin-application:/src/src/LabMonitoring.Application/bin
+      - api-obj-application:/src/src/LabMonitoring.Application/obj
+      - api-bin-infrastructure:/src/src/LabMonitoring.Infrastructure/bin
+      - api-obj-infrastructure:/src/src/LabMonitoring.Infrastructure/obj
+      - api-bin-api:/src/src/LabMonitoring.Api/bin
+      - api-obj-api:/src/src/LabMonitoring.Api/obj
+      # AgentSecret Data Protection keys (ADR-0009) — without this, every container restart makes
+      # every already-registered agent's stored secret unrecoverable (new random key ring each time).
+      - api-dp-keys:/var/lib/labmonitoring-api/dp-keys
+      # Uploaded LabAgent update packages (auto-update, SRS H1) — same reasoning: keep them across
+      # container restarts instead of losing every upload.
+      - api-agent-packages:/var/lib/labmonitoring-api/agent-packages
+      # File transfer (push/collect) storage — same reasoning as the volumes above.
+      - api-file-transfers:/var/lib/labmonitoring-api/file-transfers
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile.dev
+    container_name: labmonitoring-frontend
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "4300:4300"
+    volumes:
+      - ../frontend:/app
+      - frontend-node-modules:/app/node_modules
+      # Vite's dependency pre-bundle cache — same reasoning as node_modules above. Bind-mounting
+      # this from the host caused a real blank-page bug: it reused a cache built by a native
+      # (Windows) `ng serve` run against the host's own node_modules, which doesn't match what the
+      # container's fresh Linux npm ci produced, and the browser silently failed to load a
+      # pre-bundled dependency. If this recurs, clear it with `docker compose -f
+      # deploy/docker-compose.dev.yml down -v` (or just the `frontend-angular-cache` volume) and
+      # restart.
+      - frontend-angular-cache:/app/.angular
+    depends_on:
+      - api
+
+volumes:
+  seq-data:
+  minio-data:
+  api-nuget-cache:
+  api-bin-domain:
+  api-obj-domain:
+  api-bin-contracts:
+  api-obj-contracts:
+  api-bin-application:
+  api-obj-application:
+  api-bin-infrastructure:
+  api-obj-infrastructure:
+  api-bin-api:
+  api-obj-api:
+  api-dp-keys:
+  api-agent-packages:
+  api-file-transfers:
+  frontend-node-modules:
+  frontend-angular-cache:

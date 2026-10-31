@@ -1,0 +1,15 @@
+{
+  "clientId": "labmonitoring-api",
+  "name": "Lab Monitoring Backend API",
+  "description": "Audience target for the .NET API (validates JWTs only; takes no part in login)",
+  "enabled": true,
+  "protocol": "openid-connect",
+  "publicClient": false,
+  "bearerOnly": false,
+  "standardFlowEnabled": false,
+  "implicitFlowEnabled": false,
+  "directAccessGrantsEnabled": false,
+  "serviceAccountsEnabled": false,
+  "clientAuthenticatorType": "client-secret",
+  "attributes": {}
+}

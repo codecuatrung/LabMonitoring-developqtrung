@@ -1,0 +1,147 @@
+@if (error(); as e) {
+  <div class="alert alert-danger" (click)="error.set(null)">{{ e }}</div>
+}
+
+<div class="card">
+  <div class="card-header d-flex justify-content-end">
+    <button class="btn btn-sm btn-primary" type="button" (click)="openCreateModal()">
+      <i class="bi bi-plus-lg"></i> Thêm vai trò
+    </button>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0 align-middle">
+      <thead><tr><th>Tên vai trò</th><th>Loại</th><th>Số màn hình</th><th></th></tr></thead>
+      <tbody>
+        @for (r of roles(); track r.id) {
+          <tr>
+            <td>{{ r.name }}</td>
+            <td>
+              @if (r.isSystem) {
+                <span class="badge text-bg-secondary">Hệ thống</span>
+              } @else {
+                <span class="badge text-bg-light">Tùy chỉnh</span>
+              }
+            </td>
+            <td>{{ r.screenIds.length }}</td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-primary" type="button" (click)="openManageModal(r)">Quản lý</button>
+              @if (!r.isSystem) {
+                <button class="btn btn-sm btn-outline-danger" type="button" (click)="requestDelete(r.id)">Xóa</button>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="4" class="text-muted">Chưa có vai trò nào.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer">
+    <app-pagination
+      [page]="page()"
+      [pageSize]="pageSize()"
+      [totalCount]="allRoles().length"
+      (pageChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
+    />
+  </div>
+</div>
+
+@if (manageRole(); as r) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Quản lý vai trò — {{ r.name }}</h5>
+        </div>
+        <div class="modal-body">
+          @if (saved()) {
+            <div class="alert alert-success py-2">Đã lưu.</div>
+          }
+
+          <div class="row g-3">
+            <div class="col-md-5">
+              <div class="card">
+                <div class="card-header">Thông tin</div>
+                <div class="card-body">
+                  <label class="form-label small">Tên vai trò</label>
+                  <input class="form-control form-control-sm" [(ngModel)]="name" name="name" [disabled]="r.isSystem" />
+                  @if (r.isSystem) {
+                    <div class="text-muted small mt-1">Vai trò hệ thống — không đổi được tên.</div>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-7">
+              <div class="card">
+                <div class="card-header">Màn hình được truy cập</div>
+                <div class="card-body" style="max-height: 320px; overflow-y: auto">
+                  @for (row of screenRows(); track row.screen.id) {
+                    <div class="form-check" [style.marginLeft.rem]="row.depth ? 1.5 : 0">
+                      <input
+                        class="form-check-input"
+                        type="checkbox"
+                        [id]="'screen-' + row.screen.id"
+                        [checked]="selectedScreenIds.has(row.screen.id)"
+                        (change)="toggleScreen(row.screen.id)"
+                      />
+                      <label class="form-check-label" [for]="'screen-' + row.screen.id">
+                        <i class="bi" [class]="row.screen.icon ?? 'bi-dot'"></i> {{ row.screen.name }}
+                      </label>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" (click)="closeManageModal()">Hủy</button>
+          <button class="btn btn-primary" type="button" (click)="save()">
+            <i class="bi bi-save"></i> Lưu thay đổi
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+@if (confirmDeleteId()) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Xác nhận xóa vai trò</h5>
+        </div>
+        <div class="modal-body">Bạn có chắc chắn muốn xóa vai trò này không?</div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" (click)="cancelDelete()">Hủy</button>
+          <button class="btn btn-danger" type="button" (click)="confirmDelete(confirmDeleteId())">Xóa</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showCreateModal()) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form (ngSubmit)="create()">
+          <div class="modal-header">
+            <h5 class="modal-title">Thêm vai trò mới</h5>
+          </div>
+          <div class="modal-body">
+            <label class="form-label small">Tên vai trò</label>
+            <input class="form-control form-control-sm" [(ngModel)]="newRoleName" name="newRoleName" required />
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" (click)="cancelCreate()">Hủy</button>
+            <button class="btn btn-primary" type="submit"><i class="bi bi-plus-lg"></i> Thêm vai trò</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}

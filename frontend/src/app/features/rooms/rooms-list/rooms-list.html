@@ -1,0 +1,135 @@
+@if (error(); as e) {
+  <div class="alert alert-danger">{{ e }}</div>
+}
+
+<!-- Overview of what's on screen -->
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3">
+    <div class="lm-stat">
+      <span class="lm-stat-icon bg-primary-subtle text-primary"><i class="bi bi-door-open"></i></span>
+      <div><div class="lm-stat-value">{{ totals().rooms }}</div><div class="lm-stat-label">Phòng máy</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="lm-stat">
+      <span class="lm-stat-icon bg-secondary-subtle text-secondary"><i class="bi bi-pc-display"></i></span>
+      <div><div class="lm-stat-value">{{ totals().computers }}</div><div class="lm-stat-label">Tổng số máy</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="lm-stat">
+      <span class="lm-stat-icon bg-success-subtle text-success"><i class="bi bi-broadcast"></i></span>
+      <div>
+        <div class="lm-stat-value">{{ totals().up }}<small class="text-muted fw-normal"> / {{ totals().computers }}</small></div>
+        <div class="lm-stat-label">Đang bật ({{ totals().inUse }} đang dùng)</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="lm-stat">
+      <span class="lm-stat-icon bg-warning-subtle text-warning"><i class="bi bi-hourglass-split"></i></span>
+      <div><div class="lm-stat-value">{{ totals().pending }}</div><div class="lm-stat-label">Máy chờ duyệt</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toolbar -->
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+  <div class="input-group input-group-sm lm-search">
+    <span class="input-group-text"><i class="bi bi-search"></i></span>
+    <input class="form-control" type="search" placeholder="Tìm theo tên hoặc mã phòng…"
+           [ngModel]="search()" (ngModelChange)="search.set($event)" name="roomSearch" />
+  </div>
+  <select class="form-select form-select-sm w-auto" [ngModel]="building()" (ngModelChange)="building.set($event)" name="roomBuilding">
+    <option value="">Tất cả tòa nhà</option>
+    @for (b of buildings(); track b) { <option [value]="b">{{ b }}</option> }
+  </select>
+  @if (search() || building()) {
+    <button class="btn btn-sm btn-link" type="button" (click)="clearFilters()">Xóa bộ lọc</button>
+  }
+
+  <div class="ms-auto d-flex align-items-center gap-3">
+    <span class="d-none d-md-flex gap-3 small text-muted">
+      <span><span class="lm-dot lm-dot-online"></span>Online</span>
+      <span><span class="lm-dot lm-dot-inuse"></span>Đang dùng</span>
+      <span><span class="lm-dot lm-dot-warning"></span>Cảnh báo</span>
+      <span><span class="lm-dot lm-dot-offline"></span>Offline</span>
+    </span>
+    <a routerLink="/catalog" class="btn btn-sm btn-outline-primary"><i class="bi bi-gear"></i> Quản lý danh mục</a>
+  </div>
+</div>
+
+@if (loading()) {
+  <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 row-cols-xxl-4 g-3" aria-busy="true">
+    @for (i of [1, 2, 3, 4]; track i) {
+      <div class="col"><div class="card lm-room-card placeholder-glow"><div class="card-body">
+        <span class="placeholder col-7 mb-2"></span><span class="placeholder col-4 mb-4"></span>
+        <span class="placeholder col-12 mb-2" style="height: 10px"></span><span class="placeholder col-8"></span>
+      </div></div></div>
+    }
+  </div>
+} @else {
+  <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 row-cols-xxl-4 g-3">
+    @for (room of visibleRooms(); track room.id) {
+      <div class="col">
+        <a [routerLink]="['/rooms', room.id]" class="card lm-room-card h-100 text-decoration-none text-body">
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex align-items-start gap-3 mb-3">
+              <span class="lm-room-icon"><i class="bi bi-pc-display-horizontal"></i></span>
+              <div class="min-w-0 flex-grow-1">
+                <h5 class="lm-room-title mb-1 text-truncate" [title]="room.name">{{ room.name }}</h5>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                  <span class="badge text-bg-light border">{{ room.code }}</span>
+                  <span class="text-muted small text-truncate"><i class="bi bi-building"></i> {{ room.buildingName }}</span>
+                </div>
+              </div>
+              @if (room.pendingCount > 0) {
+                <span class="badge text-bg-warning" title="Máy đang chờ được duyệt">{{ room.pendingCount }} chờ duyệt</span>
+              }
+            </div>
+
+            <!-- Status bar -->
+            @if (approvedCount(room) > 0) {
+              <div class="lm-statusbar mb-2" role="img"
+                   [attr.aria-label]="room.onlineCount + room.inUseCount + room.warningCount + ' trên ' + approvedCount(room) + ' máy đang bật'">
+                @for (s of segments(room); track s.key) {
+                  @if (s.count > 0) {
+                    <span class="lm-seg lm-seg-{{ s.key }}" [style.width.%]="s.percent" [title]="s.label + ': ' + s.count"></span>
+                  }
+                }
+              </div>
+              <div class="d-flex flex-wrap gap-x-3 small text-muted mb-3 lm-legend">
+                @for (s of segments(room); track s.key) {
+                  <span [class.lm-legend-zero]="s.count === 0"><span class="lm-dot lm-dot-{{ s.key }}"></span>{{ s.count }} {{ s.label }}</span>
+                }
+              </div>
+            } @else {
+              <div class="lm-statusbar lm-statusbar-empty mb-2"></div>
+              <div class="small text-muted mb-3">Chưa có máy nào được duyệt.</div>
+            }
+
+            <div class="mt-auto d-flex align-items-center justify-content-between pt-2 border-top">
+              <span class="small text-muted">
+                <i class="bi bi-pc-display me-1"></i><strong class="text-body">{{ room.computerCount }}</strong> máy
+                · sức chứa {{ room.capacity }}
+              </span>
+              <span class="lm-open small fw-semibold">Mở phòng <i class="bi bi-arrow-right"></i></span>
+            </div>
+          </div>
+        </a>
+      </div>
+    } @empty {
+      <div class="col-12">
+        <div class="lm-empty">
+          <i class="bi bi-door-closed"></i>
+          @if (search() || building()) {
+            <p class="mb-2">Không có phòng nào khớp bộ lọc.</p>
+            <button class="btn btn-sm btn-outline-secondary" type="button" (click)="clearFilters()">Xóa bộ lọc</button>
+          } @else {
+            <p class="mb-0">Chưa có phòng máy nào. Thêm ở <a routerLink="/catalog">Quản lý danh mục</a>.</p>
+          }
+        </div>
+      </div>
+    }
+  </div>
+}

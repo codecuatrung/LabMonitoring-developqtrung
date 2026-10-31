@@ -1,0 +1,81 @@
+@if (error(); as e) {
+  <div class="alert alert-danger" (click)="error.set(null)">{{ e }}</div>
+}
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header">Lớp học</div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+          <thead><tr><th>Mã</th><th>Tên lớp</th><th>Môn</th><th>Giảng viên</th><th>SV</th><th></th></tr></thead>
+          <tbody>
+            @for (c of classes(); track c.id) {
+              <tr>
+                <td><a [routerLink]="['/classes', c.id]">{{ c.code }}</a></td>
+                <td>{{ c.name }}</td>
+                <td>{{ c.subject }}</td>
+                <td>{{ c.teacherName }}</td>
+                <td>{{ c.studentCount }}</td>
+                <td class="text-end">
+                  <button class="btn btn-sm btn-outline-danger" type="button" (click)="deleteClass(c)">Xóa</button>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="6" class="text-muted">Chưa có lớp học nào.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer">
+        <app-pagination
+          [page]="page"
+          [pageSize]="pageSize"
+          [totalCount]="totalCount()"
+          (pageChange)="onPageChange($event)"
+          (pageSizeChange)="onPageSizeChange($event)"
+        />
+      </div>
+      <div class="card-body">
+        <form class="row g-2" (ngSubmit)="addClass()">
+          <div class="col-3"><input class="form-control form-control-sm" placeholder="Mã lớp" [(ngModel)]="newClass.code" name="ccode" required></div>
+          <div class="col"><input class="form-control form-control-sm" placeholder="Tên lớp" [(ngModel)]="newClass.name" name="cname" required></div>
+          <div class="col-3"><input class="form-control form-control-sm" placeholder="Môn học" [(ngModel)]="newClass.subject" name="csubject" required></div>
+          <div class="col-4">
+            <select class="form-select form-select-sm" [(ngModel)]="newClass.teacherId" name="cteacher" required>
+              <option [ngValue]="0" disabled>— chọn giảng viên —</option>
+              @for (t of teachers(); track t.id) { <option [ngValue]="t.id">{{ t.fullName }}</option> }
+            </select>
+          </div>
+          <div class="col-3"><input class="form-control form-control-sm" placeholder="Học kỳ" [(ngModel)]="newClass.semester" name="csem"></div>
+          <div class="col-auto"><button class="btn btn-sm btn-primary" type="submit" [disabled]="!newClass.teacherId">Thêm lớp</button></div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header">Danh mục sinh viên</div>
+      <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>MSSV</th><th>Họ tên</th></tr></thead>
+          <tbody>
+            @for (s of students(); track s.id) {
+              <tr><td>{{ s.studentCode }}</td><td>{{ s.fullName }}</td></tr>
+            } @empty {
+              <tr><td colspan="2" class="text-muted">Chưa có sinh viên.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="card-body">
+        <form class="row g-2" (ngSubmit)="addStudent()">
+          <div class="col-4"><input class="form-control form-control-sm" placeholder="MSSV" [(ngModel)]="newStudent.studentCode" name="scode" required></div>
+          <div class="col"><input class="form-control form-control-sm" placeholder="Họ tên" [(ngModel)]="newStudent.fullName" name="sname" required></div>
+          <div class="col-auto"><button class="btn btn-sm btn-primary" type="submit">Thêm</button></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

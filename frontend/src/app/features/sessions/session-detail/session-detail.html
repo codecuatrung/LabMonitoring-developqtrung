@@ -1,0 +1,56 @@
+@if (error(); as e) {
+  <div class="alert alert-danger">{{ e }}</div>
+}
+
+@if (session(); as s) {
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><a routerLink="/sessions">Ca thực hành</a></li>
+      <li class="breadcrumb-item active">{{ s.className }}</li>
+    </ol>
+  </nav>
+
+  <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+    <span class="badge"
+          [class.text-bg-success]="s.status === 'Active'"
+          [class.text-bg-secondary]="s.status === 'Ended'">{{ s.status }}</span>
+
+    <div class="ms-auto d-flex gap-2">
+      @if (s.status === 'Active') {
+        <button class="btn btn-sm btn-outline-primary" type="button" [disabled]="busy()" (click)="allocate()">
+          <i class="bi bi-shuffle"></i> Phân bổ tự động
+        </button>
+        <button class="btn btn-sm btn-danger" type="button" [disabled]="busy()" (click)="end()">
+          <i class="bi bi-stop-circle"></i> Kết thúc ca
+        </button>
+      } @else {
+        <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/sessions', s.id, 'report']">Xem báo cáo</a>
+      }
+    </div>
+  </div>
+
+  <p class="text-muted small">
+    Giảng viên: {{ s.teacherName }} · Bắt đầu: {{ s.startedAt | date: 'medium' }}
+    @if (s.endedAt) { · Kết thúc: {{ s.endedAt | date: 'medium' }} }
+  </p>
+
+  <div class="table-responsive">
+    <table class="table table-sm align-middle">
+      <thead><tr><th>Máy</th><th>Sinh viên</th><th>Đăng nhập</th><th>Đăng xuất</th></tr></thead>
+      <tbody>
+        @for (c of s.computers; track c.computerId) {
+          <tr>
+            <td><a [routerLink]="['/computers', c.computerId]">{{ c.computerName }}</a></td>
+            <td>{{ c.studentCode ? c.studentCode + ' — ' + c.studentName : '—' }}</td>
+            <td>{{ c.loginAt ? (c.loginAt | date: 'short') : '—' }}</td>
+            <td>{{ c.logoutAt ? (c.logoutAt | date: 'short') : '—' }}</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="4" class="text-muted">Phòng không có máy nào được duyệt khi bắt đầu ca.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+} @else if (!error()) {
+  <div class="text-muted">Đang tải…</div>
+}

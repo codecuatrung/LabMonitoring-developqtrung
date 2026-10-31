@@ -1,0 +1,43 @@
+@if (error(); as e) {
+  <div class="alert alert-danger">{{ e }}</div>
+}
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead>
+        <tr><th>Lớp</th><th>Phòng</th><th>Giảng viên</th><th>Bắt đầu</th><th>Kết thúc</th><th>Máy</th><th>Trạng thái</th></tr>
+      </thead>
+      <tbody>
+        @for (s of sessions(); track s.id) {
+          <tr>
+            <td><a [routerLink]="['/sessions', s.id]">{{ s.className }}</a></td>
+            <td>{{ s.roomName }}</td>
+            <td>{{ s.teacherName }}</td>
+            <td>{{ s.startedAt | date: 'short' }}</td>
+            <td>{{ s.endedAt ? (s.endedAt | date: 'short') : '—' }}</td>
+            <td>{{ s.studentCount }}/{{ s.computerCount }}</td>
+            <td>
+              <span class="badge"
+                    [class.text-bg-success]="s.status === 'Active'"
+                    [class.text-bg-secondary]="s.status === 'Ended'"
+                    [class.text-bg-light]="s.status === 'Scheduled'"
+                    [class.text-bg-danger]="s.status === 'Cancelled'">{{ s.status }}</span>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="7" class="text-muted">Chưa có ca thực hành nào. Bắt đầu từ trang phòng máy.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer">
+    <app-pagination
+      [page]="page"
+      [pageSize]="pageSize"
+      [totalCount]="totalCount()"
+      (pageChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
+    />
+  </div>
+</div>

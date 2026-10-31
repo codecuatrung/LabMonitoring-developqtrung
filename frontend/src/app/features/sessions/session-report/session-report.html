@@ -1,0 +1,63 @@
+@if (error(); as e) {
+  <div class="alert alert-danger">{{ e }}</div>
+}
+
+@if (report(); as r) {
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><a routerLink="/sessions">Ca thực hành</a></li>
+      <li class="breadcrumb-item active">Báo cáo</li>
+    </ol>
+  </nav>
+
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-lg-3">
+      <div class="card text-bg-primary h-100"><div class="card-body">
+        <div class="fs-3 fw-bold">{{ r.durationMinutes | number: '1.0-0' }}</div><div>phút</div>
+      </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card text-bg-success h-100"><div class="card-body">
+        <div class="fs-3 fw-bold">{{ r.computersUsed }}</div><div>máy đã dùng</div>
+      </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card text-bg-info h-100"><div class="card-body">
+        <div class="fs-3 fw-bold">{{ r.studentsLoggedIn }}</div><div>SV đã đăng nhập</div>
+      </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card text-bg-secondary h-100"><div class="card-body">
+        <div class="fs-3 fw-bold">{{ r.studentsEnrolled }}</div><div>SV trong lớp</div>
+      </div></div>
+    </div>
+  </div>
+
+  <p class="text-muted small">
+    Phòng: {{ r.roomName }} · Giảng viên: {{ r.teacherName }} ·
+    {{ r.startedAt | date: 'medium' }} → {{ r.endedAt ? (r.endedAt | date: 'medium') : 'đang diễn ra' }}
+  </p>
+
+  <div class="alert alert-secondary small">
+    Ghi chú: mục "sự cố phát sinh" (FR-6.4) sẽ hiển thị khi hệ thống cảnh báo (M5) lưu lại lịch sử
+    Offline/vượt ngưỡng theo từng ca — hiện báo cáo tập trung vào thời lượng và tình trạng sử dụng máy.
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-sm align-middle">
+      <thead><tr><th>Máy</th><th>Sinh viên</th><th>Đăng nhập</th><th>Đăng xuất</th></tr></thead>
+      <tbody>
+        @for (c of r.computers; track c.computerId) {
+          <tr>
+            <td>{{ c.computerName }}</td>
+            <td>{{ c.studentCode ? c.studentCode + ' — ' + c.studentName : '—' }}</td>
+            <td>{{ c.loginAt ? (c.loginAt | date: 'short') : '—' }}</td>
+            <td>{{ c.logoutAt ? (c.logoutAt | date: 'short') : '—' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+} @else if (!error()) {
+  <div class="text-muted">Đang tải…</div>
+}

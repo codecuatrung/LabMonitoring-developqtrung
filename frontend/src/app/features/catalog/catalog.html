@@ -1,0 +1,192 @@
+@if (error(); as e) {
+  <div class="alert alert-danger" (click)="error.set(null)">{{ e }}</div>
+}
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">Tòa nhà</div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+          <thead><tr><th>Tên</th><th>Mã</th><th>Số phòng</th><th></th></tr></thead>
+          <tbody>
+            @for (b of buildings(); track b.id) {
+              <tr>
+                <td>{{ b.name }}</td>
+                <td><span class="badge text-bg-light">{{ b.code }}</span></td>
+                <td>{{ b.roomCount }}</td>
+                <td class="text-end">
+                  <span class="d-inline-flex gap-1">
+                    <button class="btn btn-sm btn-outline-secondary" type="button" title="Sửa tòa nhà" (click)="openEditBuilding(b)">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" type="button"
+                            [disabled]="b.roomCount > 0" (click)="deleteBuilding(b)">Xóa</button>
+                  </span>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="4" class="text-muted">Chưa có tòa nhà.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer">
+        <app-pagination
+          [page]="buildingsPage"
+          [pageSize]="buildingsPageSize"
+          [totalCount]="buildingsTotal()"
+          (pageChange)="onBuildingsPageChange($event)"
+          (pageSizeChange)="onBuildingsPageSizeChange($event)"
+        />
+      </div>
+      <div class="card-body">
+        <form class="row g-2" (ngSubmit)="addBuilding()">
+          <div class="col"><input class="form-control form-control-sm" placeholder="Tên tòa nhà"
+                                   [(ngModel)]="newBuilding.name" name="bname" required></div>
+          <div class="col-4"><input class="form-control form-control-sm" placeholder="Mã"
+                                    [(ngModel)]="newBuilding.code" name="bcode" required></div>
+          <div class="col-auto"><button class="btn btn-sm btn-primary" type="submit">Thêm</button></div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">Phòng máy</div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+          <thead><tr><th>Tên</th><th>Mã</th><th>Tòa nhà</th><th>Sức chứa</th><th></th></tr></thead>
+          <tbody>
+            @for (r of rooms(); track r.id) {
+              <tr>
+                <td><a [routerLink]="['/rooms', r.id]">{{ r.name }}</a></td>
+                <td><span class="badge text-bg-light">{{ r.code }}</span></td>
+                <td class="text-muted small">{{ r.buildingName }}</td>
+                <td>{{ r.capacity }}</td>
+                <td class="text-end">
+                  <span class="d-inline-flex gap-1">
+                    <button class="btn btn-sm btn-outline-secondary" type="button" title="Sửa phòng máy" (click)="openEditRoom(r)">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    @if (confirmRegenerateId() === r.id) {
+                      <button class="btn btn-sm btn-warning" type="button" (click)="confirmRegenerateCode(r)">Xác nhận?</button>
+                      <button class="btn btn-sm btn-outline-secondary" type="button" (click)="cancelRegenerateCode()">Hủy</button>
+                    } @else {
+                      <button class="btn btn-sm btn-outline-secondary" type="button" title="Tạo mã đăng ký mới"
+                              (click)="requestRegenerateCode(r)">
+                        <i class="bi bi-arrow-repeat"></i>
+                      </button>
+                    }
+                    <button class="btn btn-sm btn-outline-danger" type="button"
+                            [disabled]="r.computerCount > 0" (click)="deleteRoom(r)">Xóa</button>
+                  </span>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5" class="text-muted">Chưa có phòng.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer">
+        <app-pagination
+          [page]="roomsPage"
+          [pageSize]="roomsPageSize"
+          [totalCount]="roomsTotal()"
+          (pageChange)="onRoomsPageChange($event)"
+          (pageSizeChange)="onRoomsPageSizeChange($event)"
+        />
+      </div>
+      <div class="card-body">
+        <form class="row g-2" (ngSubmit)="addRoom()">
+          <div class="col-12">
+            <select class="form-select form-select-sm" [(ngModel)]="newRoom.buildingId" name="rbuilding" required>
+              <option [ngValue]="0" disabled>— chọn tòa nhà —</option>
+              @for (b of allBuildings(); track b.id) {
+                <option [ngValue]="b.id">{{ b.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="col"><input class="form-control form-control-sm" placeholder="Tên phòng"
+                                   [(ngModel)]="newRoom.name" name="rname" required></div>
+          <div class="col-3"><input class="form-control form-control-sm" placeholder="Mã"
+                                    [(ngModel)]="newRoom.code" name="rcode" required></div>
+          <div class="col-3"><input type="number" class="form-control form-control-sm" placeholder="Sức chứa"
+                                    [(ngModel)]="newRoom.capacity" name="rcap" min="1"></div>
+          <div class="col-auto"><button class="btn btn-sm btn-primary" type="submit"
+                                        [disabled]="!newRoom.buildingId">Thêm</button></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+@if (buildingEditor(); as b) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form (ngSubmit)="saveBuilding()">
+          <div class="modal-header"><h5 class="modal-title"><i class="bi bi-building"></i> Sửa tòa nhà</h5></div>
+          <div class="modal-body">
+            @if (modalError(); as e) { <div class="alert alert-danger py-2 small">{{ e }}</div> }
+            <label class="form-label small" for="editBuildingName">Tên tòa nhà</label>
+            <input id="editBuildingName" class="form-control form-control-sm mb-3" [(ngModel)]="buildingForm.name"
+                   name="editBuildingName" maxlength="100" required />
+            <label class="form-label small" for="editBuildingCode">Mã tòa nhà</label>
+            <input id="editBuildingCode" class="form-control form-control-sm" [(ngModel)]="buildingForm.code"
+                   name="editBuildingCode" maxlength="20" required />
+            <div class="form-text">Hiện có {{ b.roomCount }} phòng máy thuộc tòa nhà này.</div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" [disabled]="saving()" (click)="closeBuildingEditor()">Hủy</button>
+            <button class="btn btn-primary" type="submit" [disabled]="saving() || !buildingForm.name.trim() || !buildingForm.code.trim()">
+              @if (saving()) { <span class="spinner-border spinner-border-sm me-1"></span> }Lưu
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}
+
+@if (roomEditor(); as r) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form (ngSubmit)="saveRoom()">
+          <div class="modal-header"><h5 class="modal-title"><i class="bi bi-pc-display-horizontal"></i> Sửa phòng máy</h5></div>
+          <div class="modal-body">
+            @if (modalError(); as e) { <div class="alert alert-danger py-2 small">{{ e }}</div> }
+            <label class="form-label small" for="editRoomName">Tên phòng máy</label>
+            <input id="editRoomName" class="form-control form-control-sm mb-3" [(ngModel)]="roomForm.name"
+                   name="editRoomName" maxlength="100" required />
+
+            <label class="form-label small" for="editRoomCapacity">Sức chứa (số máy)</label>
+            <input id="editRoomCapacity" type="number" min="1" class="form-control form-control-sm mb-3"
+                   [(ngModel)]="roomForm.capacity" name="editRoomCapacity" required />
+
+            <div class="row g-3">
+              <div class="col-6">
+                <label class="form-label small">Tòa nhà</label>
+                <input class="form-control form-control-sm" [value]="r.buildingName" disabled />
+              </div>
+              <div class="col-6">
+                <label class="form-label small">Mã phòng (mã đăng ký Agent)</label>
+                <input class="form-control form-control-sm" [value]="r.code" disabled />
+              </div>
+            </div>
+            <div class="form-text mt-2">Muốn đổi mã đăng ký, dùng nút <i class="bi bi-arrow-repeat"></i> "Tạo mã đăng ký mới" ở danh sách.</div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" [disabled]="saving()" (click)="closeRoomEditor()">Hủy</button>
+            <button class="btn btn-primary" type="submit" [disabled]="saving() || !roomForm.name.trim() || !(roomForm.capacity >= 1)">
+              @if (saving()) { <span class="spinner-border spinner-border-sm me-1"></span> }Lưu
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,49 @@
+@if (error(); as e) {
+  <div class="alert alert-danger">{{ e }}</div>
+}
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form class="row g-2 align-items-end" (ngSubmit)="run()">
+      <div class="col-8 col-md-4">
+        <label class="form-label small mb-1">Hành động</label>
+        <input class="form-control form-control-sm" [(ngModel)]="action" name="action" placeholder="vd: Command., User., Room." />
+      </div>
+      <div class="col-4 col-md-2">
+        <button class="btn btn-sm btn-primary w-100" type="submit"><i class="bi bi-search"></i> Lọc</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Thời điểm</th><th>Người dùng</th><th>Hành động</th><th>Đối tượng</th><th>IP</th></tr></thead>
+      <tbody>
+        @for (log of result()?.items ?? []; track log.id) {
+          <tr>
+            <td>{{ log.createdAt | date: 'medium' }}</td>
+            <td>{{ log.userName ?? 'Hệ thống' }}</td>
+            <td><code>{{ log.action }}</code></td>
+            <td>{{ log.entityType }}{{ log.entityId ? ' #' + log.entityId : '' }}</td>
+            <td>{{ log.ipAddress ?? '—' }}</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="5" class="text-muted">Không có bản ghi.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  @if (result(); as r) {
+    <div class="card-footer">
+      <app-pagination
+        [page]="page"
+        [pageSize]="pageSize"
+        [totalCount]="r.totalCount"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)"
+      />
+    </div>
+  }
+</div>

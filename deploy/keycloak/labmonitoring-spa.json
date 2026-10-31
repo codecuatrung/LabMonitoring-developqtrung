@@ -1,0 +1,43 @@
+{
+  "clientId": "labmonitoring-spa",
+  "name": "Lab Monitoring Angular Frontend",
+  "description": "Angular SPA (public client, Authorization Code + PKCE)",
+  "enabled": true,
+  "protocol": "openid-connect",
+  "publicClient": true,
+  "standardFlowEnabled": true,
+  "implicitFlowEnabled": false,
+  "directAccessGrantsEnabled": false,
+  "serviceAccountsEnabled": false,
+  "frontchannelLogout": true,
+  "rootUrl": "http://localhost:4300",
+  "baseUrl": "/",
+  "redirectUris": [
+    "http://localhost:4300/*",
+    "https://192.168.1.28:4300/*"
+  ],
+  "webOrigins": [
+    "http://localhost:4300",
+    "https://192.168.1.28:4300"
+  ],
+  "attributes": {
+    "pkce.code.challenge.method": "S256",
+    "post.logout.redirect.uris": "http://localhost:4300/*##https://192.168.1.28:4300/*"
+  },
+  "defaultClientScopes": ["basic", "web-origins", "profile", "roles", "email", "acr"],
+  "optionalClientScopes": ["address", "phone", "offline_access", "microprofile-jwt"],
+  "protocolMappers": [
+    {
+      "name": "labmonitoring-api-audience",
+      "protocol": "openid-connect",
+      "protocolMapper": "oidc-audience-mapper",
+      "consentRequired": false,
+      "config": {
+        "included.client.audience": "labmonitoring-api",
+        "id.token.claim": "false",
+        "access.token.claim": "true",
+        "introspection.token.claim": "true"
+      }
+    }
+  ]
+}
