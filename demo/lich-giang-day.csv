@@ -1,0 +1,8 @@
+﻿id,day,date,start,end,teacher,className,subject,room,type,status
+"sch1","Thứ 2","2026-11-02","08:00","10:00","Nguyễn Minh Anh","Điện công nghiệp K24","Thực hành PLC","Phòng thực hành A.203","Giảng dạy","Đã xác nhận"
+"sch2","Thứ 2","2026-11-02","10:30","12:00","Trần Quốc Bảo","Lập trình Web K25","Phát triển giao diện web","Phòng máy B.105","Giảng dạy","Đã xác nhận"
+"sch3","Thứ 3","2026-11-03","13:00","16:00","Lê Thu Hà","Cơ khí chính xác K24","Gia công CNC","Xưởng thực hành C.01","Giảng dạy","Chờ xác nhận"
+"sch4","Thứ 4","2026-11-04","08:00","10:00","Nguyễn Minh Anh","Điện công nghiệp K24","Thực hành PLC","Phòng thực hành A.203","Giảng dạy","Đã xác nhận"
+"sch5","Thứ 5","2026-11-05","13:30","16:00","Trần Quốc Bảo","Lập trình Web K25","Phát triển giao diện web","Phòng máy B.105","Giảng dạy","Đã xác nhận"
+"sch6","Thứ 6","2026-11-06","08:00","11:00","Lê Thu Hà","Cơ khí chính xác K24","Gia công CNC","Xưởng thực hành C.01","Giảng dạy","Đã xác nhận"
+"sch7","Thứ 6","2026-11-06","14:00","16:00","Nguyễn Minh Anh","Điện công nghiệp K24","Thực hành PLC","Phòng thực hành A.203","Giảng dạy","Đã xác nhận"

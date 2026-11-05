@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    { "source": "/schedule", "destination": "/" },
+    { "source": "/my-calendar", "destination": "/" },
+    { "source": "/duties", "destination": "/" },
+    { "source": "/duty-templates", "destination": "/" },
+    { "source": "/people", "destination": "/" },
+    { "source": "/rooms", "destination": "/" },
+    { "source": "/reports", "destination": "/" },
+    { "source": "/admin", "destination": "/" }
+  ]
+}
